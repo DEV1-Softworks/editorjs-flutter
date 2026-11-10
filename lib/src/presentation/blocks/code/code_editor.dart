@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/blocks/code_block.dart';
 import '../base_block_editor.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class CodeEditor extends BlockEditor<CodeBlock> {
   const CodeEditor({super.key, required super.block, required super.onChanged});
@@ -27,6 +28,7 @@ class _CodeEditorState extends State<CodeEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -44,9 +46,9 @@ class _CodeEditorState extends State<CodeEditor> {
           color: Color(0xFFD4D4D4),
           height: 1.5,
         ),
-        decoration: const InputDecoration(
-          hintText: 'Enter code...',
-          hintStyle: TextStyle(color: Colors.white30),
+        decoration: InputDecoration(
+          hintText: strings.codeHint,
+          hintStyle: const TextStyle(color: Colors.white30),
           border: InputBorder.none,
         ),
       ),

@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 
 import '../../../domain/entities/blocks/code_block.dart';
 import '../base_block_renderer.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class CodeRenderer extends BlockRenderer<CodeBlock> {
   const CodeRenderer({super.key, required super.block, super.styleConfig});
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -35,7 +37,7 @@ class CodeRenderer extends BlockRenderer<CodeBlock> {
             right: 6,
             child: IconButton(
               icon: const Icon(Icons.copy, size: 16, color: Colors.white54),
-              tooltip: 'Copy',
+              tooltip: strings.copy,
               onPressed: () => Clipboard.setData(ClipboardData(text: block.code)),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),

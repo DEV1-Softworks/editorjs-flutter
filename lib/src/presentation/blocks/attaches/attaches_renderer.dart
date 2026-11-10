@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/blocks/attaches_block.dart';
 import '../../widgets/editor_link_scope.dart';
 import '../base_block_renderer.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class AttachesRenderer extends BlockRenderer<AttachesBlock> {
   const AttachesRenderer(
@@ -10,8 +11,9 @@ class AttachesRenderer extends BlockRenderer<AttachesBlock> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     final displayName =
-        block.title ?? block.name ?? 'Download file';
+        block.title ?? block.name ?? strings.downloadFile;
     final ext = block.extension?.toUpperCase();
 
     return InkWell(

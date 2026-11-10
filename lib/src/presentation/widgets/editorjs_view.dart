@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/datasources/json_document_source.dart';
 import '../../domain/usecases/parse_document.dart';
 import '../config/editor_config.dart';
+import 'editor_config_scope.dart';
 import 'editor_link_scope.dart';
 
 /// Read-only viewer for EditorJS JSON content.
@@ -34,17 +35,20 @@ class EditorJSView extends StatelessWidget {
         config.rendererRegistry.buildRenderer(block, config.styleConfig),
     ].nonNulls;
 
-    return EditorLinkScope(
-      onLinkTap: config.onLinkTap,
-      allowedSchemes: config.allowedLinkSchemes,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final widget in rendered) ...[
-            widget,
-            const SizedBox(height: 8),
+    return EditorConfigScope(
+      config: config,
+      child: EditorLinkScope(
+        onLinkTap: config.onLinkTap,
+        allowedSchemes: config.allowedLinkSchemes,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final widget in rendered) ...[
+              widget,
+              const SizedBox(height: 8),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

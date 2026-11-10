@@ -132,7 +132,7 @@ final config = EditorConfig(
 
 - **Widgets**: `EditorJSView`, `EditorJSEditor`, `EditorLinkScope` (lets custom renderers open links through `EditorConfig.onLinkTap`)
 - **Controller**: `EditorController`
-- **Config**: `EditorConfig`, `EditorToolbarItem`, `ImageUploader` / `PickedImage` / `UploadedImage`, `LinkPreviewFetcher`, `AttachmentPicker`
+- **Config**: `EditorConfig`, `EditorToolbarItem`, `ImageUploader` / `PickedImage` / `UploadedImage`, `LinkPreviewFetcher`, `AttachmentPicker`, `EditorStrings`, `EditorTranslations` (bundled `es` and `fr`)
 - **Registries**: `BlockTypeRegistry`, `BlockRendererRegistry`
 - **Contracts** (for custom block authors): `BlockMapper`, `BlockRenderer`, `BlockEditor`, `BlockEntity`, `BlockDocument`, `BlockMetadata`, `StyleConfig`
 - **Built-in entities**: `HeaderBlock`, `ParagraphBlock`, `ListBlock`, `DelimiterBlock`, `ImageBlock`, and the other block entities; `UnknownBlock` holds any block the package cannot interpret so it round-trips untouched
@@ -172,6 +172,7 @@ When building new features, always work bottom-up:
 4. Run `fvm flutter test --coverage` locally and verify the coverage threshold.
 5. Follow the Clean Architecture layer rules: no Flutter imports in `domain/`, no direct widget dependencies in `data/`.
 6. New block types must be added bottom-up: entity → mapper → renderer → (editor) → register in both registries → export from barrel.
+7. No hard-coded user-visible text in widgets. Add a field to `EditorStrings` and read it with `EditorConfigScope.stringsOf(context)`; `test/widget/localization_test.dart` fails when a widget shows text that did not come from there. Every new text must also be added to each file in `lib/src/presentation/config/translations/`; `test/unit/translations_test.dart` fails when a bundled translation is incomplete.
 
 ## Git Workflow
 

@@ -3,6 +3,7 @@ import '../../domain/entities/style_config.dart';
 import '../registry/block_renderer_registry.dart';
 import '../widgets/editor_link_scope.dart';
 import 'block_editor_hooks.dart';
+import 'editor_strings.dart';
 import 'editor_toolbar_item.dart';
 import 'image_uploader.dart';
 
@@ -62,6 +63,11 @@ class EditorConfig {
   /// it an attachment is given as a URL.
   final AttachmentPicker? attachmentPicker;
 
+  /// The text of every label, tooltip, hint and message the editor and the
+  /// viewer show. Defaults to English; pass your own [EditorStrings] to
+  /// translate or reword them.
+  final EditorStrings strings;
+
   EditorConfig({
     BlockTypeRegistry? typeRegistry,
     BlockRendererRegistry? rendererRegistry,
@@ -72,6 +78,7 @@ class EditorConfig {
     this.imageUploader,
     this.linkPreviewFetcher,
     this.attachmentPicker,
+    this.strings = const EditorStrings(),
   })  : typeRegistry = typeRegistry ?? BlockTypeRegistry(),
         rendererRegistry = rendererRegistry ?? BlockRendererRegistry();
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../data/utils/embed_services.dart';
 import '../../../domain/entities/blocks/embed_block.dart';
 import '../base_block_editor.dart';
+import '../../widgets/editor_config_scope.dart';
 
 /// Edits an embed block: the link to the content and its caption.
 ///
@@ -86,6 +87,7 @@ class _EmbedEditorState extends State<EmbedEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     final recognized = _block.service.isNotEmpty;
 
     return Column(
@@ -96,8 +98,8 @@ class _EmbedEditorState extends State<EmbedEditor> {
           onChanged: _setSource,
           keyboardType: TextInputType.url,
           autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'Embed link',
+          decoration: InputDecoration(
+            labelText: strings.embedLink,
             hintText: 'https://www.youtube.com/watch?v=...',
             isDense: true,
           ),
@@ -107,8 +109,8 @@ class _EmbedEditorState extends State<EmbedEditor> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               recognized
-                  ? 'Service: ${_block.service}'
-                  : 'This link is not from a supported service.',
+                  ? strings.embedService(_block.service)
+                  : strings.embedUnsupported,
               style: TextStyle(
                 fontSize: 12,
                 color: recognized
@@ -120,8 +122,8 @@ class _EmbedEditorState extends State<EmbedEditor> {
         TextField(
           controller: _captionController,
           onChanged: _setCaption,
-          decoration: const InputDecoration(
-            labelText: 'Caption',
+          decoration: InputDecoration(
+            labelText: strings.caption,
             isDense: true,
           ),
         ),

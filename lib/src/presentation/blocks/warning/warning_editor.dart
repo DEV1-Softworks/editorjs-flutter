@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/blocks/warning_block.dart';
 import '../base_block_editor.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class WarningEditor extends BlockEditor<WarningBlock> {
   const WarningEditor({super.key, required super.block, required super.onChanged});
@@ -35,6 +36,7 @@ class _WarningEditorState extends State<WarningEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -57,8 +59,8 @@ class _WarningEditorState extends State<WarningEditor> {
                   controller: _titleController,
                   onChanged: (_) => _notify(),
                   style: const TextStyle(fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                    hintText: 'Warning title',
+                  decoration: InputDecoration(
+                    hintText: strings.warningTitleHint,
                     border: InputBorder.none,
                     isDense: true,
                   ),
@@ -67,8 +69,8 @@ class _WarningEditorState extends State<WarningEditor> {
                   controller: _messageController,
                   onChanged: (_) => _notify(),
                   maxLines: null,
-                  decoration: const InputDecoration(
-                    hintText: 'Warning message...',
+                  decoration: InputDecoration(
+                    hintText: strings.warningMessageHint,
                     border: InputBorder.none,
                     isDense: true,
                   ),

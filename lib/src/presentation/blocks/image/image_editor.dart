@@ -76,13 +76,14 @@ class _ImageEditorState extends State<ImageEditor> {
 
   Future<void> _pickImage(ImageSource source) async {
     final uploader = EditorConfigScope.maybeOf(context)?.imageUploader;
+    final strings = EditorConfigScope.stringsOf(context);
     setState(() => _error = null);
 
     final XFile? file;
     try {
       file = await _picker.pickImage(source: source);
     } on PlatformException {
-      if (mounted) setState(() => _error = 'Could not open the image.');
+      if (mounted) setState(() => _error = strings.imagePickFailed);
       return;
     }
     if (file == null || !mounted) return;
@@ -108,7 +109,7 @@ class _ImageEditorState extends State<ImageEditor> {
     } catch (_) {
       // The uploader is app code and may throw anything. The block keeps the
       // image it had.
-      if (mounted) setState(() => _error = 'Upload failed. Try again.');
+      if (mounted) setState(() => _error = strings.imageUploadFailed);
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -121,6 +122,7 @@ class _ImageEditorState extends State<ImageEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -132,13 +134,13 @@ class _ImageEditorState extends State<ImageEditor> {
               onPressed:
                   _uploading ? null : () => _pickImage(ImageSource.camera),
               icon: const Icon(Icons.camera_alt_outlined),
-              label: const Text('Camera'),
+              label: Text(strings.camera),
             ),
             TextButton.icon(
               onPressed:
                   _uploading ? null : () => _pickImage(ImageSource.gallery),
               icon: const Icon(Icons.photo_library_outlined),
-              label: const Text('Gallery'),
+              label: Text(strings.gallery),
             ),
           ],
         ),
@@ -158,8 +160,8 @@ class _ImageEditorState extends State<ImageEditor> {
           onChanged: (value) => _setImage(value.trim()),
           keyboardType: TextInputType.url,
           autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'Image URL',
+          decoration: InputDecoration(
+            labelText: strings.imageUrl,
             hintText: 'https://...',
             isDense: true,
           ),
@@ -167,8 +169,8 @@ class _ImageEditorState extends State<ImageEditor> {
         TextField(
           controller: _captionController,
           onChanged: (value) => _update(_block.copyWith(caption: value)),
-          decoration: const InputDecoration(
-            labelText: 'Caption',
+          decoration: InputDecoration(
+            labelText: strings.caption,
             isDense: true,
           ),
         ),
@@ -177,18 +179,18 @@ class _ImageEditorState extends State<ImageEditor> {
           spacing: 8,
           children: [
             FilterChip(
-              label: const Text('Border'),
+              label: Text(strings.imageBorder),
               selected: _block.withBorder,
               onSelected: (value) =>
                   _update(_block.copyWith(withBorder: value)),
             ),
             FilterChip(
-              label: const Text('Stretch'),
+              label: Text(strings.imageStretch),
               selected: _block.stretched,
               onSelected: (value) => _update(_block.copyWith(stretched: value)),
             ),
             FilterChip(
-              label: const Text('Background'),
+              label: Text(strings.imageBackground),
               selected: _block.withBackground,
               onSelected: (value) =>
                   _update(_block.copyWith(withBackground: value)),

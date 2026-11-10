@@ -5,12 +5,14 @@ import '../../../domain/entities/blocks/embed_block.dart';
 import '../../widgets/editor_link_scope.dart';
 import '../../widgets/inline_html.dart';
 import '../base_block_renderer.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class EmbedRenderer extends BlockRenderer<EmbedBlock> {
   const EmbedRenderer({super.key, required super.block, super.styleConfig});
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return InkWell(
       onTap: block.source.isNotEmpty
           ? () => EditorLinkScope.open(context, block.source)
@@ -44,7 +46,7 @@ class EmbedRenderer extends BlockRenderer<EmbedBlock> {
                   Text(
                     block.service.isNotEmpty
                         ? _capitalise(block.service)
-                        : 'Embedded content',
+                        : strings.embeddedContent,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,

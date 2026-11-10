@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/blocks/paragraph_block.dart';
+import '../../config/editor_strings.dart';
+import '../../widgets/editor_config_scope.dart';
 import '../base_block_editor.dart';
 
 class ParagraphEditor extends BlockEditor<ParagraphBlock> {
@@ -186,10 +188,13 @@ class _ParagraphEditorState extends State<ParagraphEditor> {
     if (!selection.isValid) return;
     final html = _textController.text;
     final anchor = _anchorAt(html, selection.start);
+    // The dialog is built outside this editor's subtree, so it is handed the
+    // texts rather than looking them up itself.
+    final strings = EditorConfigScope.stringsOf(context);
 
     final choice = await showDialog<_LinkChoice>(
       context: context,
-      builder: (_) => _LinkDialog(initialUrl: anchor?.href),
+      builder: (_) => _LinkDialog(initialUrl: anchor?.href, strings: strings),
     );
     if (!mounted || choice == null) return;
 
@@ -225,19 +230,25 @@ class _ParagraphEditorState extends State<ParagraphEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_showFormatBar)
-            _InlineFormatBar(onFormat: _applyFormat, onLink: _editLink),
+            _InlineFormatBar(
+              strings: strings,
+              onFormat: _applyFormat,
+              onLink: _editLink,
+            ),
           TextField(
             controller: _textController,
             focusNode: _focusNode,
             onChanged: _onTextChanged,
-            decoration: const InputDecoration(
-              hintText: 'Write something...',
+            decoration: InputDecoration(
+              hintText: strings.paragraphHint,
               border: InputBorder.none,
             ),
             maxLines: null,
@@ -250,10 +261,15 @@ class _ParagraphEditorState extends State<ParagraphEditor> {
 }
 
 class _InlineFormatBar extends StatelessWidget {
+  final EditorStrings strings;
   final void Function(String openTag, String closeTag) onFormat;
   final VoidCallback onLink;
 
-  const _InlineFormatBar({required this.onFormat, required this.onLink});
+  const _InlineFormatBar({
+    required this.strings,
+    required this.onFormat,
+    required this.onLink,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -262,45 +278,45 @@ class _InlineFormatBar extends StatelessWidget {
       child: Row(
         children: [
           _FormatButton(
-            label: 'B',
+            label: strings.boldLabel,
             bold: true,
-            tooltip: 'Bold',
+            tooltip: strings.bold,
             onTap: () => onFormat('<b>', '</b>'),
           ),
           _FormatButton(
-            label: 'I',
+            label: strings.italicLabel,
             italic: true,
-            tooltip: 'Italic',
+            tooltip: strings.italic,
             onTap: () => onFormat('<i>', '</i>'),
           ),
           _FormatButton(
-            label: 'U',
+            label: strings.underlineLabel,
             underline: true,
-            tooltip: 'Underline',
+            tooltip: strings.underline,
             onTap: () => onFormat('<u>', '</u>'),
           ),
           _FormatButton(
-            label: 'S',
+            label: strings.strikethroughLabel,
             strikethrough: true,
-            tooltip: 'Strikethrough',
+            tooltip: strings.strikethrough,
             onTap: () => onFormat('<s>', '</s>'),
           ),
           _FormatButton(
             label: '</>',
             monospace: true,
-            tooltip: 'Inline code',
+            tooltip: strings.inlineCode,
             onTap: () => onFormat('<code>', '</code>'),
           ),
           _FormatButton(
-            label: 'mark',
+            label: strings.highlightLabel,
             highlight: true,
-            tooltip: 'Highlight',
+            tooltip: strings.highlight,
             onTap: () => onFormat('<mark>', '</mark>'),
           ),
           _FormatButton(
-            label: 'link',
+            label: strings.linkLabel,
             underline: true,
-            tooltip: 'Link',
+            tooltip: strings.link,
             onTap: onLink,
           ),
         ],
@@ -314,8 +330,9 @@ class _InlineFormatBar extends StatelessWidget {
 class _LinkDialog extends StatefulWidget {
   /// The current target when an existing link is being edited.
   final String? initialUrl;
+  final EditorStrings strings;
 
-  const _LinkDialog({this.initialUrl});
+  const _LinkDialog({this.initialUrl, required this.strings});
 
   @override
   State<_LinkDialog> createState() => _LinkDialogState();
@@ -341,16 +358,18 @@ class _LinkDialogState extends State<_LinkDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = widget.strings;
+
     return AlertDialog(
-      title: Text(_editing ? 'Edit link' : 'Add link'),
+      title: Text(_editing ? strings.editLinkTitle : strings.addLinkTitle),
       content: TextField(
         controller: _controller,
         autofocus: true,
         keyboardType: TextInputType.url,
         autocorrect: false,
         onSubmitted: (_) => _save(),
-        decoration: const InputDecoration(
-          labelText: 'Link address',
+        decoration: InputDecoration(
+          labelText: strings.linkAddress,
           hintText: 'https://...',
         ),
       ),
@@ -359,13 +378,13 @@ class _LinkDialogState extends State<_LinkDialog> {
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, const _LinkChoice.remove()),
-            child: const Text('Remove link'),
+            child: Text(strings.removeLink),
           ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(strings.cancel),
         ),
-        TextButton(onPressed: _save, child: const Text('Save')),
+        TextButton(onPressed: _save, child: Text(strings.save)),
       ],
     );
   }

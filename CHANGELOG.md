@@ -32,6 +32,10 @@
   * *Attachment:* file URL and title; the new `EditorConfig.attachmentPicker` adds a "Choose file" button for apps that bring their own file picker and upload.
   * *Raw:* the HTML source.
 
+### Translatable text
+* **Every label, tooltip, hint and message can be translated or reworded.** New `EditorConfig.strings` takes an `EditorStrings`, which holds all 104 texts the editor and the viewer show on their own, with English defaults; override only the ones you need. Texts that include a value (a heading level, a file size) are functions. Until now all text was hard-coded in English.
+* **Spanish and French are bundled.** `EditorTranslations.es` and `EditorTranslations.fr` are complete translations; `EditorTranslations.forLanguage(code)` picks one from a language code or locale tag and falls back to English. The README explains how to add another language, in an app or in the package.
+
 ### Parser hardening
 * A field of the wrong type no longer throws out of `EditorJSView` / `EditorController.fromJson`. Every built-in mapper now reads through tolerant helpers; previously `linkTool.meta: []`, a non-string list `style`, a non-string paragraph `text` and a non-integer document `time` each raised a `TypeError`.
 * `time` accepts integers, doubles and numeric strings; header `level` accepts doubles.
@@ -49,7 +53,7 @@
 * Lists are always written in the list 2.x shape: `ListBlock.toJson()` adds a root `meta`, and `ListItem.toJson()` adds a per-item `meta`.
 
 ### Tests
-* Added `test/unit/lossless_roundtrip_test.dart`, `test/unit/editor_controller_metadata_test.dart`, `test/unit/json_reader_test.dart`, `test/unit/list_v2_test.dart`, `test/widget/unknown_block_test.dart`, `test/widget/list_v2_test.dart`, `test/widget/viewer_fidelity_test.dart`, `test/widget/header_level_test.dart`, `test/widget/toolbar_items_test.dart`, `test/widget/image_editor_test.dart` and `test/widget/nested_list_editor_test.dart` (390 tests in total, 94 % line coverage).
+* Added `test/unit/lossless_roundtrip_test.dart`, `editor_controller_metadata_test.dart`, `json_reader_test.dart`, `list_v2_test.dart`, `embed_services_test.dart` and `translations_test.dart`; and `test/widget/unknown_block_test.dart`, `list_v2_test.dart`, `viewer_fidelity_test.dart`, `header_level_test.dart`, `toolbar_items_test.dart`, `image_editor_test.dart`, `nested_list_editor_test.dart`, `media_block_editors_test.dart`, `paragraph_link_test.dart` and `localization_test.dart` (469 tests in total, 95 % line coverage).
 
 ---
 
