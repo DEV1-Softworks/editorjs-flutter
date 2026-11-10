@@ -1,4 +1,4 @@
-## [Unreleased] — towards 1.0.0
+## [1.0.0] - 2026-11-10 — EditorJS 2.31 parity
 
 ### Lossless round-trip with current EditorJS (2.31)
 * **Block ids and tunes are preserved.** `id` and `tunes` are read into the new `BlockDocument.metadata` (`BlockMetadata`) and written back on serialize. `EditorController.blockIds` now holds the EditorJS ids (kept from the document, generated in EditorJS's own 10-character format for new blocks) and the new `EditorController.blockTunes` exposes each block's tunes. Both follow their block through update, move and undo/redo.
@@ -35,6 +35,15 @@
 ### Translatable text
 * **Every label, tooltip, hint and message can be translated or reworded.** New `EditorConfig.strings` takes an `EditorStrings`, which holds all 104 texts the editor and the viewer show on their own, with English defaults; override only the ones you need. Texts that include a value (a heading level, a file size) are functions. Until now all text was hard-coded in English.
 * **Spanish and French are bundled.** `EditorTranslations.es` and `EditorTranslations.fr` are complete translations; `EditorTranslations.forLanguage(code)` picks one from a language code or locale tag and falls back to English. The README explains how to add another language, in an app or in the package.
+
+### Requirements and dependencies
+* **The minimum is now declared as Flutter 3.27 (Dart 3.6).** Earlier releases declared Flutter 3.10 but already used `Color.withValues`, which arrived in 3.27, so on an older Flutter the package installed and then failed to compile. Nothing changes for apps that could build it.
+* **`html` is capped below 0.15.7.** `html` 0.15.7 removed a function that `flutter_html` 3.0.0 calls, so an app that resolved to it failed to compile. The package now depends on `html: ">=0.15.5 <0.15.7"` until `flutter_html` supports the newer version. An app that needs `html` 0.15.7 or later for another package will get a version conflict.
+* `flutter_html`: `^3.0.0-beta.2` → `^3.0.0`. The pre-release versions are no longer accepted.
+
+### CI and workflow
+* CI also runs on pushes and pull requests to `develop`.
+* `CLAUDE.md` and the README describe the git flow the project uses: work branches from `develop`, releases from `release/<version>` into `master`.
 
 ### Parser hardening
 * A field of the wrong type no longer throws out of `EditorJSView` / `EditorController.fromJson`. Every built-in mapper now reads through tolerant helpers; previously `linkTool.meta: []`, a non-string list `style`, a non-string paragraph `text` and a non-integer document `time` each raised a `TypeError`.

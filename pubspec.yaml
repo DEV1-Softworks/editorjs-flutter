@@ -1,6 +1,6 @@
 name: editorjs_flutter
 description: "Flutter viewer and editor widgets for the EditorJS JSON schema. Supports 14 built-in block types with a Clean Architecture extension point for custom blocks."
-version: 0.5.0-beta.1
+version: 1.0.0
 homepage: https://labs.dev1.mx/editorjs-flutter
 repository: https://github.com/DEV1-Softworks/editorjs-flutter
 issue_tracker: https://github.com/DEV1-Softworks/editorjs-flutter/issues
@@ -11,13 +11,17 @@ topics:
   - content
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
-  flutter: ">=3.10.0"
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_html: ^3.0.0-beta.2
+  flutter_html: ^3.0.0
+  # Not used directly. flutter_html 3.0.0 calls a function that html 0.15.7
+  # removed, so an app that resolves to 0.15.7 fails to compile. Remove this
+  # cap once flutter_html supports it.
+  html: ">=0.15.5 <0.15.7"
   image_picker: ^1.0.0
   url_launcher: ^6.2.0
 

@@ -6,10 +6,12 @@ A viewer and editor compatible with the [EditorJS](https://editorjs.io/) JSON sc
 [![CI](https://github.com/DEV1-Softworks/editorjs-flutter/actions/workflows/ci.yml/badge.svg)](https://github.com/DEV1-Softworks/editorjs-flutter/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/DEV1-Softworks/editorjs-flutter/branch/master/graph/badge.svg)](https://codecov.io/gh/DEV1-Softworks/editorjs-flutter)
 
-# DISCLAIMER
-This package is in active development (pre-1.0). The public API is stable and the Clean Architecture foundation is solid, but some editor features are still being refined. Suitable for early production use with the understanding that minor API changes may occur in future minor versions.
+# Status
+Version 1.0 is the first stable release. It reads and writes the JSON of EditorJS 2.31, including the `@editorjs/list` 2.x format, and saving a document keeps everything that was loaded: block ids, tunes, and blocks from plugins this package does not know.
 
-Requires **Flutter 3.10+** and **Dart 3.0+**.
+From 1.0 on the package follows [semantic versioning](https://dart.dev/tools/pub/versioning): the public API changes incompatibly only in a new major version.
+
+Requires **Flutter 3.27+** (Dart 3.6+).
 
 # Installation
 
@@ -17,10 +19,12 @@ Add the following to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  editorjs_flutter: ^0.5.0-beta.1
+  editorjs_flutter: ^1.0.0
 ```
 
 Then run `flutter pub get`.
+
+The package limits `html` to versions below 0.15.7, because `flutter_html` 3.0.0 does not compile with 0.15.7. If `pub get` reports a conflict on `html`, another of your dependencies requires the newer version.
 
 # Usage
 
@@ -347,7 +351,7 @@ AI tools (including Claude Code) are permitted to assist with contributions to t
 
 The following rules apply when using Claude Code (`claude` CLI) on this repository:
 
-1. **Branch before coding.** Claude Code must create and checkout a new branch from `master` before writing any code. Branch names must follow the `feat/`, `fix/`, `refactor/`, or `chore/` prefix convention. Direct commits to `master` are never allowed.
+1. **Branch before coding.** Claude Code must create and checkout a new branch from `develop` before writing any code, one branch per task and never on top of another work branch. Branch names must follow the `feat/`, `fix/`, `refactor/`, or `chore/` prefix convention (`release/<version>` for a release). Direct commits to `master` or `develop` are never allowed. `CLAUDE.md` describes the full workflow.
 2. **Generate a PR description before finishing.** At the end of every coding session, Claude Code must produce a `PR_DESCRIPTION.md` file at the repo root summarising the changes (title, type of change, summary, breaking changes, migration notes, test plan checklist). This file is ephemeral — delete it after the PR is merged.
 3. **No autonomous commits.** Claude Code must never commit or push changes without explicit human instruction. Every commit requires a human to review the diff and approve it first.
 4. **No force pushes.** Claude Code must never run `git push --force` or any destructive git operation (`reset --hard`, `branch -D`, etc.) without explicit human confirmation.
