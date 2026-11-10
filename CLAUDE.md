@@ -111,7 +111,7 @@ final config = EditorConfig(
 |---|---|---|---|
 | `header` | H1–H6 | ✅ | |
 | `paragraph` | HTML via flutter_html | ✅ | Inline format bar (B/I/U/S/code/mark) |
-| `list` | Ordered / unordered / nested | ✅ | |
+| `list` | Ordered (start, counter type) / unordered / checklist / nested | ✅ | `@editorjs/list` 2.x format; legacy list, nested-list and checklist data is read too. Nested items are rendered but not yet editable |
 | `delimiter` | Divider | ✅ | |
 | `image` | Network URL | ✅ | caption/border/stretch parsed; image_picker not wired |
 | `quote` | With alignment | ✅ | |
