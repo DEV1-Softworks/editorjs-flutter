@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 import '../../../domain/entities/blocks/image_block.dart';
+import '../../widgets/inline_html.dart';
 import '../base_block_renderer.dart';
 
 class ImageRenderer extends BlockRenderer<ImageBlock> {
@@ -47,13 +49,13 @@ class ImageRenderer extends BlockRenderer<ImageBlock> {
         if (block.caption != null && block.caption!.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(
+            child: InlineHtml(
               block.caption!,
-              style: TextStyle(
-                fontSize: 12,
+              styleConfig: styleConfig,
+              bodyStyle: Style(
+                fontSize: FontSize(12),
                 color: Colors.grey.shade600,
                 fontStyle: FontStyle.italic,
-                fontFamily: styleConfig?.defaultFont,
               ),
             ),
           ),

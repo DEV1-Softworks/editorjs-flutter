@@ -1,6 +1,7 @@
 // Widgets
 export 'src/presentation/widgets/editorjs_view.dart';
 export 'src/presentation/widgets/editorjs_editor.dart';
+export 'src/presentation/widgets/editor_link_scope.dart';
 
 // Controller
 export 'src/presentation/controller/editor_controller.dart';

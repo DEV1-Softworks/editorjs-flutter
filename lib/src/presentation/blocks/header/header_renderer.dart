@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 import '../../../domain/entities/blocks/header_block.dart';
+import '../../widgets/inline_html.dart';
 import '../base_block_renderer.dart';
 
 class HeaderRenderer extends BlockRenderer<HeaderBlock> {
@@ -10,12 +12,12 @@ class HeaderRenderer extends BlockRenderer<HeaderBlock> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(
+      child: InlineHtml(
         block.text,
-        style: TextStyle(
-          fontSize: _fontSize(block.level),
+        styleConfig: styleConfig,
+        bodyStyle: Style(
+          fontSize: FontSize(_fontSize(block.level)),
           fontWeight: _fontWeight(block.level),
-          fontFamily: styleConfig?.defaultFont,
         ),
       ),
     );

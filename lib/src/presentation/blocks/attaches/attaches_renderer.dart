@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../domain/entities/blocks/attaches_block.dart';
+import '../../widgets/editor_link_scope.dart';
 import '../base_block_renderer.dart';
 
 class AttachesRenderer extends BlockRenderer<AttachesBlock> {
@@ -16,15 +16,7 @@ class AttachesRenderer extends BlockRenderer<AttachesBlock> {
 
     return InkWell(
       onTap: block.url.isNotEmpty
-          ? () async {
-              final uri = Uri.tryParse(block.url);
-              if (uri == null) return;
-              final scheme = uri.scheme.toLowerCase();
-              if (scheme != 'http' && scheme != 'https') return;
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            }
+          ? () => EditorLinkScope.open(context, block.url)
           : null,
       borderRadius: BorderRadius.circular(8),
       child: Container(

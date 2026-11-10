@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 
-import '../../../data/utils/html_sanitizer.dart';
 import '../../../domain/entities/blocks/list_block.dart';
-import '../../utils/html_style_builder.dart';
 import '../../utils/list_counter_formatter.dart';
+import '../../widgets/inline_html.dart';
 import '../base_block_renderer.dart';
 
 class ListRenderer extends BlockRenderer<ListBlock> {
@@ -35,18 +34,22 @@ class ListRenderer extends BlockRenderer<ListBlock> {
     final rows = <Widget>[];
     for (final item in items) {
       final path = [...parentPath, counter++];
-      rows.add(Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: parentPath.length * _indentPerLevel),
-          _buildMarker(context, item, path),
-          Expanded(
-            child: Html(
-              data: HtmlSanitizer.sanitize(item.content),
-              style: _contentStyle(item),
+      rows.add(Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: parentPath.length * _indentPerLevel),
+            _buildMarker(context, item, path),
+            Expanded(
+              child: InlineHtml(
+                item.content,
+                styleConfig: styleConfig,
+                bodyStyle: _contentStyle(item),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ));
       rows.addAll(_buildItems(context, item.items, path));
     }
@@ -56,7 +59,7 @@ class ListRenderer extends BlockRenderer<ListBlock> {
   Widget _buildMarker(BuildContext context, ListItem item, List<int> path) {
     if (block.style == ListStyle.checklist) {
       return Padding(
-        padding: const EdgeInsets.only(top: 2, right: 8),
+        padding: const EdgeInsets.only(top: 1, right: 8),
         child: Icon(
           item.checked
               ? Icons.check_box_outlined
@@ -70,7 +73,7 @@ class ListRenderer extends BlockRenderer<ListBlock> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(top: 2, right: 6),
+      padding: const EdgeInsets.only(right: 8),
       child: Text(
         block.style == ListStyle.ordered
             ? ListCounterFormatter.marker(path, block.counterType)
@@ -84,16 +87,11 @@ class ListRenderer extends BlockRenderer<ListBlock> {
   }
 
   /// Ticked checklist items are struck through, like the checklist block.
-  Map<String, Style> _contentStyle(ListItem item) {
-    final styles = HtmlStyleBuilder.build(styleConfig);
-    if (block.style != ListStyle.checklist || !item.checked) return styles;
-
-    return {
-      ...styles,
-      'body': (styles['body'] ?? Style()).copyWith(
-        textDecoration: TextDecoration.lineThrough,
-        color: Colors.grey,
-      ),
-    };
+  Style? _contentStyle(ListItem item) {
+    if (block.style != ListStyle.checklist || !item.checked) return null;
+    return Style(
+      textDecoration: TextDecoration.lineThrough,
+      color: Colors.grey,
+    );
   }
 }

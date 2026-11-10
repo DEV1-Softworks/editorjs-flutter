@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../domain/entities/blocks/link_tool_block.dart';
+import '../../widgets/editor_link_scope.dart';
 import '../base_block_renderer.dart';
 
 class LinkToolRenderer extends BlockRenderer<LinkToolBlock> {
@@ -14,21 +14,7 @@ class LinkToolRenderer extends BlockRenderer<LinkToolBlock> {
 
     return InkWell(
       onTap: block.link.isNotEmpty
-          ? () async {
-              final uri = Uri.tryParse(block.link);
-              if (uri == null) {
-                return;
-              }
-              if (uri.scheme != 'http' && uri.scheme != 'https') {
-                return;
-              }
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(
-                  uri,
-                  mode: LaunchMode.externalApplication,
-                );
-              }
-            }
+          ? () => EditorLinkScope.open(context, block.link)
           : null,
       borderRadius: BorderRadius.circular(8),
       child: Container(

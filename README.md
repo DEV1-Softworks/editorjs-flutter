@@ -63,6 +63,32 @@ EditorJSView(
 )
 ```
 
+### Handling link taps
+
+Web links (`http` and `https`) in the content open in the external application by default; links with any other scheme do nothing. To allow more schemes, list them:
+
+```dart
+EditorJSView(
+  jsonData: myJsonString,
+  config: EditorConfig(
+    allowedLinkSchemes: const {'http', 'https', 'mailto', 'tel'},
+  ),
+)
+```
+
+To handle taps yourself, for example with an in-app browser or your own router, pass `onLinkTap`:
+
+```dart
+EditorJSView(
+  jsonData: myJsonString,
+  config: EditorConfig(
+    onLinkTap: (url) => myRouter.open(url),
+  ),
+)
+```
+
+The callback receives the URL exactly as it appears in the document, so check the scheme before opening it.
+
 ### Full viewer example
 
 ```dart
