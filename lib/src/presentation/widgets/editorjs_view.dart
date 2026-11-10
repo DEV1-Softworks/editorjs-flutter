@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/datasources/json_document_source.dart';
 import '../../domain/usecases/parse_document.dart';
 import '../config/editor_config.dart';
+import 'editor_link_scope.dart';
 
 /// Read-only viewer for EditorJS JSON content.
 ///
@@ -33,14 +34,17 @@ class EditorJSView extends StatelessWidget {
         config.rendererRegistry.buildRenderer(block, config.styleConfig),
     ].nonNulls;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final widget in rendered) ...[
-          widget,
-          const SizedBox(height: 8),
+    return EditorLinkScope(
+      onLinkTap: config.onLinkTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final widget in rendered) ...[
+            widget,
+            const SizedBox(height: 8),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

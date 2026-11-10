@@ -13,6 +13,12 @@
 * **Two checklist buttons in the toolbar.** "Checklist" now adds a list 2.x checklist (a `list` block with `style: "checklist"`); "Checklist (legacy)" adds the older `checklist` block that the button used to create. Which one a site can read depends on the tools installed in its EditorJS instance.
 * **Legacy formats are still read:** `@editorjs/list` 1.x string items, `@editorjs/nested-list` items, and old checklist `{text, checked}` items stored under a list block.
 
+### Viewer fidelity
+* **Tables are now visible.** The table renderer laid its columns out at zero width, so every table showed as a thin strip with one letter per line. Columns now take the width of their content and the table scrolls sideways when it is wider than the screen. A `stretched` table fills the available width.
+* **Inline formatting and entities are rendered everywhere.** Headers, table cells, legacy checklist items, warning title and message, and image, embed and quote captions showed markup such as `<b>` and `&amp;` literally. All text now goes through one widget, so bold, italic, links, marker, inline code and entities render in every block.
+* **Links can be tapped.** `<a>` links did nothing. They now open in the external application (`http`, `https`, `mailto` and `tel` only), or are passed to the new `EditorConfig.onLinkTap`. Link, embed and attachment cards go through the same handler. Custom renderers can join in with `EditorLinkScope.open(context, url)`.
+* **Blocks line up.** Paragraph, quote and raw text had an extra 8 px left and right margin that headers and tables did not; list markers sat about 6 px above their item's text. Both are fixed, and list items are spaced 8 px apart.
+
 ### Parser hardening
 * A field of the wrong type no longer throws out of `EditorJSView` / `EditorController.fromJson`. Every built-in mapper now reads through tolerant helpers; previously `linkTool.meta: []`, a non-string list `style`, a non-string paragraph `text` and a non-integer document `time` each raised a `TypeError`.
 * `time` accepts integers, doubles and numeric strings; header `level` accepts doubles.
@@ -24,11 +30,13 @@
 * `BlockRendererRegistry.buildRenderer` / `buildEditor` return `null` for an `UnknownBlock` even when a builder is registered for its type string.
 * Blocks with a missing or non-string `type` are still dropped: they cannot be written back.
 * The toolbar's "Checklist" button creates a `list` block with the checklist style, no longer a `checklist` block; the previous behaviour moved to the new "Checklist (legacy)" button.
+* Link, embed and attachment cards now also open `mailto` and `tel` targets, and no longer raise an unhandled error when the platform cannot open a link.
+* Paragraph, quote and raw blocks are 16 px wider (no horizontal margin) and list rows are closer together.
 * `ListStyle` has a third value, `checklist`: an exhaustive `switch` over `ListStyle` in consumer code needs a new case.
 * Lists are always written in the list 2.x shape: `ListBlock.toJson()` adds a root `meta`, and `ListItem.toJson()` adds a per-item `meta`.
 
 ### Tests
-* Added `test/unit/lossless_roundtrip_test.dart`, `test/unit/editor_controller_metadata_test.dart`, `test/unit/json_reader_test.dart`, `test/unit/list_v2_test.dart`, `test/widget/unknown_block_test.dart` and `test/widget/list_v2_test.dart` (314 tests in total, 90 % line coverage).
+* Added `test/unit/lossless_roundtrip_test.dart`, `test/unit/editor_controller_metadata_test.dart`, `test/unit/json_reader_test.dart`, `test/unit/list_v2_test.dart`, `test/widget/unknown_block_test.dart`, `test/widget/list_v2_test.dart` and `test/widget/viewer_fidelity_test.dart` (337 tests in total, 92 % line coverage).
 
 ---
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 import '../../../domain/entities/blocks/checklist_block.dart';
+import '../../widgets/inline_html.dart';
 import '../base_block_renderer.dart';
 
 class ChecklistRenderer extends BlockRenderer<ChecklistBlock> {
@@ -27,14 +29,15 @@ class ChecklistRenderer extends BlockRenderer<ChecklistBlock> {
               ),
             ),
             Expanded(
-              child: Text(
+              child: InlineHtml(
                 item.text,
-                style: TextStyle(
-                  fontFamily: styleConfig?.defaultFont,
-                  decoration:
-                      item.checked ? TextDecoration.lineThrough : null,
-                  color: item.checked ? Colors.grey : null,
-                ),
+                styleConfig: styleConfig,
+                bodyStyle: item.checked
+                    ? Style(
+                        textDecoration: TextDecoration.lineThrough,
+                        color: Colors.grey,
+                      )
+                    : null,
               ),
             ),
           ],

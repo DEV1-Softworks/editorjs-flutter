@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
 
-import '../../../data/utils/html_sanitizer.dart';
 import '../../../domain/entities/blocks/paragraph_block.dart';
 import '../base_block_renderer.dart';
-import '../../utils/html_style_builder.dart';
+import '../../widgets/inline_html.dart';
 
 class ParagraphRenderer extends BlockRenderer<ParagraphBlock> {
   const ParagraphRenderer({super.key, required super.block, super.styleConfig});
 
   @override
   Widget build(BuildContext context) {
-    return Html(
-      data: HtmlSanitizer.sanitize(block.html),
-      style: HtmlStyleBuilder.build(styleConfig),
+    return InlineHtml(
+      block.html,
+      styleConfig: styleConfig,
+      compact: false,
     );
   }
 }

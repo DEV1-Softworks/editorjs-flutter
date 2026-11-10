@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 import '../../../domain/entities/blocks/warning_block.dart';
+import '../../widgets/inline_html.dart';
 import '../base_block_renderer.dart';
 
 class WarningRenderer extends BlockRenderer<WarningBlock> {
@@ -30,18 +32,13 @@ class WarningRenderer extends BlockRenderer<WarningBlock> {
                 if (block.title.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
+                    child: InlineHtml(
                       block.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontFamily: styleConfig?.defaultFont,
-                      ),
+                      styleConfig: styleConfig,
+                      bodyStyle: Style(fontWeight: FontWeight.bold),
                     ),
                   ),
-                Text(
-                  block.message,
-                  style: TextStyle(fontFamily: styleConfig?.defaultFont),
-                ),
+                InlineHtml(block.message, styleConfig: styleConfig),
               ],
             ),
           ),

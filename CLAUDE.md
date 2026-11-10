@@ -109,7 +109,7 @@ final config = EditorConfig(
 
 | Block | Viewer | Editor | Notes |
 |---|---|---|---|
-| `header` | H1–H6 | ✅ | |
+| `header` | H1–H6, inline HTML | ✅ | |
 | `paragraph` | HTML via flutter_html | ✅ | Inline format bar (B/I/U/S/code/mark) |
 | `list` | Ordered (start, counter type) / unordered / checklist / nested | ✅ | `@editorjs/list` 2.x format; legacy list, nested-list and checklist data is read too. Nested items are rendered but not yet editable |
 | `delimiter` | Divider | ✅ | |
@@ -117,8 +117,8 @@ final config = EditorConfig(
 | `quote` | With alignment | ✅ | |
 | `code` | Monospace + copy button | ✅ | |
 | `checklist` | Checked / unchecked | ✅ | Legacy `@editorjs/checklist` block; toolbar button "Checklist (legacy)". The toolbar's "Checklist" button creates a `list` block with the checklist style |
-| `table` | With optional heading row | ✅ | |
-| `warning` | Title + message | ✅ | |
+| `table` | Optional heading row, `stretched`, inline HTML in cells | ✅ | Columns sized to content; scrolls horizontally |
+| `warning` | Title + message, inline HTML | ✅ | |
 | `embed` | Tappable card | Viewer only | |
 | `linkTool` | Link preview card | Viewer only | |
 | `attaches` | File download card | Viewer only | |
@@ -130,7 +130,7 @@ final config = EditorConfig(
 
 `lib/editorjs_flutter.dart` is the sole entry point. It exports:
 
-- **Widgets**: `EditorJSView`, `EditorJSEditor`
+- **Widgets**: `EditorJSView`, `EditorJSEditor`, `EditorLinkScope` (lets custom renderers open links through `EditorConfig.onLinkTap`)
 - **Controller**: `EditorController`
 - **Config**: `EditorConfig`
 - **Registries**: `BlockTypeRegistry`, `BlockRendererRegistry`
@@ -159,7 +159,7 @@ When building new features, always work bottom-up:
 - `lib/src/data/registry/block_type_registry.dart` — JSON parsing extension point
 - `lib/src/presentation/registry/block_renderer_registry.dart` — rendering extension point
 - `lib/src/presentation/controller/editor_controller.dart` — editor state + `getContent()`
-- `lib/src/presentation/widgets/` — thin shell widgets
+- `lib/src/presentation/widgets/` — thin shell widgets, plus `inline_html.dart`: the one widget every renderer uses to show EditorJS text (sanitizing, styling, link taps)
 - `demo/lib/main.dart` — viewer usage example
 - `demo/lib/createnote.dart` — editor usage example
 - `demo/test_data/` — sample EditorJS JSON and styles JSON
