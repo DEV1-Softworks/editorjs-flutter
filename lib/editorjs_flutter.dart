@@ -9,6 +9,7 @@ export 'src/presentation/controller/editor_controller.dart';
 // Configuration
 export 'src/presentation/config/block_editor_hooks.dart';
 export 'src/presentation/config/editor_config.dart';
+export 'src/presentation/config/editor_strings.dart';
 export 'src/presentation/config/editor_toolbar_item.dart';
 export 'src/presentation/config/image_uploader.dart';
 

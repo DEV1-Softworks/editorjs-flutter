@@ -1,11 +1,12 @@
 import 'package:flutter/widgets.dart';
 
 import '../config/editor_config.dart';
+import '../config/editor_strings.dart';
 
-/// Makes the [EditorConfig] of the surrounding `EditorJSEditor` available to
-/// the block editors below it.
+/// Makes the [EditorConfig] of the surrounding `EditorJSEditor` or
+/// `EditorJSView` available to the block widgets below it.
 ///
-/// Block editors are built by the registry from a block and a callback, so
+/// Block editors and renderers are built by the registry from a block, so
 /// they cannot receive configuration as arguments. They read it from here.
 class EditorConfigScope extends InheritedWidget {
   final EditorConfig config;
@@ -16,10 +17,15 @@ class EditorConfigScope extends InheritedWidget {
     required super.child,
   });
 
-  /// The configuration of the surrounding editor, or `null` when a block
-  /// editor is used on its own.
+  /// The configuration of the surrounding editor or viewer, or `null` when a
+  /// block widget is used on its own.
   static EditorConfig? maybeOf(BuildContext context) =>
       context.getInheritedWidgetOfExactType<EditorConfigScope>()?.config;
+
+  /// The texts to show: those of the surrounding configuration, or the
+  /// English defaults when a block widget is used on its own.
+  static EditorStrings stringsOf(BuildContext context) =>
+      maybeOf(context)?.strings ?? const EditorStrings();
 
   @override
   bool updateShouldNotify(EditorConfigScope oldWidget) =>

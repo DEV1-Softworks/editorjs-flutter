@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/blocks/raw_block.dart';
 import '../base_block_editor.dart';
+import '../../widgets/editor_config_scope.dart';
 
 /// Edits the HTML source of a raw block.
 class RawEditor extends BlockEditor<RawBlock> {
@@ -36,6 +37,7 @@ class _RawEditorState extends State<RawEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return TextField(
       controller: _controller,
       onChanged: (value) => widget.onChanged(RawBlock(html: value)),
@@ -44,11 +46,11 @@ class _RawEditorState extends State<RawEditor> {
       autocorrect: false,
       enableSuggestions: false,
       style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-      decoration: const InputDecoration(
-        labelText: 'Raw HTML',
+      decoration: InputDecoration(
+        labelText: strings.rawHtml,
         hintText: '<div>...</div>',
         alignLabelWithHint: true,
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
       ),
     );
   }

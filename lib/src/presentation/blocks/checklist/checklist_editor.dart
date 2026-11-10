@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/blocks/checklist_block.dart';
 import '../base_block_editor.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class ChecklistEditor extends BlockEditor<ChecklistBlock> {
   const ChecklistEditor({super.key, required super.block, required super.onChanged});
@@ -59,6 +60,7 @@ class _ChecklistEditorState extends State<ChecklistEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -76,8 +78,8 @@ class _ChecklistEditorState extends State<ChecklistEditor> {
                     _items[i] = _items[i].copyWith(text: v);
                     _notify();
                   },
-                  decoration: const InputDecoration(
-                    hintText: 'List item...',
+                  decoration: InputDecoration(
+                    hintText: strings.checklistItemHint,
                     border: InputBorder.none,
                   ),
                 ),
@@ -91,7 +93,7 @@ class _ChecklistEditorState extends State<ChecklistEditor> {
         TextButton.icon(
           onPressed: _addItem,
           icon: const Icon(Icons.add, size: 16),
-          label: const Text('Add item'),
+          label: Text(strings.addItem),
         ),
       ],
     );

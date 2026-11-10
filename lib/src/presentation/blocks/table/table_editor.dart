@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/blocks/table_block.dart';
 import '../base_block_editor.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class TableEditor extends BlockEditor<TableBlock> {
   const TableEditor({super.key, required super.block, required super.onChanged});
@@ -96,6 +97,7 @@ class _TableEditorState extends State<TableEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -108,7 +110,7 @@ class _TableEditorState extends State<TableEditor> {
                 _notify();
               },
             ),
-            const Text('First row is header'),
+            Text(strings.firstRowIsHeader),
           ],
         ),
         SingleChildScrollView(
@@ -145,7 +147,7 @@ class _TableEditorState extends State<TableEditor> {
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline, size: 16),
                       onPressed: () => _removeRow(r),
-                      tooltip: 'Remove row',
+                      tooltip: strings.removeRow,
                     ),
                   ],
                 ),
@@ -160,7 +162,7 @@ class _TableEditorState extends State<TableEditor> {
                           icon: const Icon(Icons.remove_circle_outline,
                               size: 16),
                           onPressed: () => _removeColumn(c),
-                          tooltip: 'Remove column',
+                          tooltip: strings.removeColumn,
                         ),
                       ),
                     ),
@@ -174,12 +176,12 @@ class _TableEditorState extends State<TableEditor> {
             TextButton.icon(
               onPressed: _addRow,
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Row'),
+              label: Text(strings.addRow),
             ),
             TextButton.icon(
               onPressed: _addColumn,
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Column'),
+              label: Text(strings.addColumn),
             ),
           ],
         ),

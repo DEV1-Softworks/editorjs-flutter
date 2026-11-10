@@ -103,6 +103,7 @@ class _LinkToolEditorState extends State<LinkToolEditor> {
   Future<void> _fetchPreview(LinkPreviewFetcher fetch) async {
     final link = _linkController.text.trim();
     if (link.isEmpty) return;
+    final strings = EditorConfigScope.stringsOf(context);
 
     setState(() {
       _fetching = true;
@@ -112,7 +113,7 @@ class _LinkToolEditorState extends State<LinkToolEditor> {
       final meta = await fetch(link);
       if (!mounted) return;
       if (meta == null) {
-        setState(() => _error = 'No preview available for this link.');
+        setState(() => _error = strings.noPreview);
         return;
       }
       _titleController.text = meta.title ?? '';
@@ -123,7 +124,7 @@ class _LinkToolEditorState extends State<LinkToolEditor> {
     } catch (_) {
       // The fetcher is app code and may throw anything. The fields keep what
       // they had.
-      if (mounted) setState(() => _error = 'Could not fetch the preview.');
+      if (mounted) setState(() => _error = strings.previewFailed);
     } finally {
       if (mounted) setState(() => _fetching = false);
     }
@@ -131,6 +132,7 @@ class _LinkToolEditorState extends State<LinkToolEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     final fetcher = EditorConfigScope.maybeOf(context)?.linkPreviewFetcher;
 
     return Column(
@@ -141,8 +143,8 @@ class _LinkToolEditorState extends State<LinkToolEditor> {
           onChanged: (_) => _notify(),
           keyboardType: TextInputType.url,
           autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'Link',
+          decoration: InputDecoration(
+            labelText: strings.linkUrl,
             hintText: 'https://...',
             isDense: true,
           ),
@@ -151,7 +153,7 @@ class _LinkToolEditorState extends State<LinkToolEditor> {
           TextButton.icon(
             onPressed: _fetching ? null : () => _fetchPreview(fetcher),
             icon: const Icon(Icons.travel_explore, size: 18),
-            label: const Text('Fetch preview'),
+            label: Text(strings.fetchPreview),
           ),
         if (_fetching) const LinearProgressIndicator(),
         if (_error != null)
@@ -168,14 +170,14 @@ class _LinkToolEditorState extends State<LinkToolEditor> {
         TextField(
           controller: _titleController,
           onChanged: (_) => _notify(),
-          decoration: const InputDecoration(labelText: 'Title', isDense: true),
+          decoration: InputDecoration(labelText: strings.title, isDense: true),
         ),
         TextField(
           controller: _descriptionController,
           onChanged: (_) => _notify(),
           maxLines: null,
-          decoration: const InputDecoration(
-            labelText: 'Description',
+          decoration: InputDecoration(
+            labelText: strings.description,
             isDense: true,
           ),
         ),
@@ -184,8 +186,8 @@ class _LinkToolEditorState extends State<LinkToolEditor> {
           onChanged: (_) => _notify(),
           keyboardType: TextInputType.url,
           autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'Preview image URL',
+          decoration: InputDecoration(
+            labelText: strings.previewImageUrl,
             isDense: true,
           ),
         ),

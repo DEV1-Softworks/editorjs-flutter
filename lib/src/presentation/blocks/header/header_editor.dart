@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/blocks/header_block.dart';
 import '../base_block_editor.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class HeaderEditor extends BlockEditor<HeaderBlock> {
   const HeaderEditor({
@@ -54,6 +55,7 @@ class _HeaderEditorState extends State<HeaderEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     final fontSize = switch (_level) {
       1 => 32.0,
       2 => 24.0,
@@ -71,7 +73,7 @@ class _HeaderEditorState extends State<HeaderEditor> {
           Padding(
             padding: const EdgeInsets.only(top: 12, right: 8),
             child: Tooltip(
-              message: 'Heading level',
+              message: strings.headingLevel,
               child: DropdownButton<int>(
                 // A document can carry a level outside H1–H6; show the
                 // nearest one rather than failing to build.
@@ -81,7 +83,7 @@ class _HeaderEditorState extends State<HeaderEditor> {
                 underline: const SizedBox.shrink(),
                 items: [
                   for (var level = _minLevel; level <= _maxLevel; level++)
-                    DropdownMenuItem(value: level, child: Text('H$level')),
+                    DropdownMenuItem(value: level, child: Text(strings.headingLabel(level))),
                 ],
               ),
             ),
@@ -95,7 +97,7 @@ class _HeaderEditorState extends State<HeaderEditor> {
                 fontWeight: _level <= 3 ? FontWeight.bold : FontWeight.w500,
               ),
               decoration: InputDecoration(
-                hintText: 'Heading $_level',
+                hintText: strings.heading(_level),
                 border: InputBorder.none,
               ),
               maxLines: null,

@@ -227,6 +227,24 @@ EditorConfig(
 
 Embed blocks need no setup: paste a link from YouTube, Vimeo, X, Instagram, CodePen, Figma or another service the EditorJS embed tool supports, and the embed URL is worked out from it.
 
+### Translating the editor
+
+All the text the editor and the viewer show on their own (button labels, tooltips, field labels, hints, messages) comes from `EditorStrings`, in English by default. Pass your own to translate or reword it; anything you leave out keeps its default:
+
+```dart
+EditorConfig(
+  strings: EditorStrings(
+    paragraph: 'Párrafo',
+    addItem: 'Agregar elemento',
+    cancel: 'Cancelar',
+    save: 'Guardar',
+    heading: (level) => 'Encabezado $level',
+  ),
+)
+```
+
+Texts that include a value, such as a heading level or a file size, are functions. The same `EditorConfig` works for `EditorJSView`, which uses a few of these texts too.
+
 ### Pre-loading existing content into the editor
 
 Load a previously saved JSON string directly:

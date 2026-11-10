@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../domain/entities/blocks/list_block.dart';
+import '../../config/editor_strings.dart';
 import '../../utils/list_counter_formatter.dart';
 import '../base_block_editor.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class ListEditor extends BlockEditor<ListBlock> {
   const ListEditor({super.key, required super.block, required super.onChanged});
@@ -40,14 +42,6 @@ class _ListEditorState extends State<ListEditor> {
     ListStyle.ordered,
     ListStyle.checklist,
   ];
-
-  static const _counterTypeLabels = {
-    ListCounterType.numeric: 'Numeric',
-    ListCounterType.lowerRoman: 'Lower Roman',
-    ListCounterType.upperRoman: 'Upper Roman',
-    ListCounterType.lowerAlpha: 'Lower Alpha',
-    ListCounterType.upperAlpha: 'Upper Alpha',
-  };
 
   static const double _indentPerLevel = 16;
 
@@ -267,12 +261,13 @@ class _ListEditorState extends State<ListEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     final markers = _style == ListStyle.ordered ? _orderedMarkers() : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSettings(),
+        _buildSettings(strings),
         for (var i = 0; i < _rows.length; i++)
           Padding(
             padding: EdgeInsets.only(left: _rows[i].depth * _indentPerLevel),
@@ -292,17 +287,17 @@ class _ListEditorState extends State<ListEditor> {
                 ),
                 _RowButton(
                   icon: Icons.format_indent_decrease,
-                  tooltip: 'Outdent',
+                  tooltip: strings.outdent,
                   onPressed: _canOutdent(i) ? () => _shift(i, -1) : null,
                 ),
                 _RowButton(
                   icon: Icons.format_indent_increase,
-                  tooltip: 'Indent',
+                  tooltip: strings.indent,
                   onPressed: _canIndent(i) ? () => _shift(i, 1) : null,
                 ),
                 _RowButton(
                   icon: Icons.remove_circle_outline,
-                  tooltip: 'Remove item',
+                  tooltip: strings.removeItem,
                   onPressed: _canRemove(i) ? () => _removeItem(i) : null,
                 ),
               ],
@@ -311,14 +306,22 @@ class _ListEditorState extends State<ListEditor> {
         TextButton.icon(
           onPressed: _addItem,
           icon: const Icon(Icons.add, size: 16),
-          label: const Text('Add item'),
+          label: Text(strings.addItem),
         ),
       ],
     );
   }
 
   /// Style selector, plus the numbering options when the list is ordered.
-  Widget _buildSettings() {
+  Widget _buildSettings(EditorStrings strings) {
+    final counterTypeLabels = {
+      ListCounterType.numeric: strings.counterNumeric,
+      ListCounterType.lowerRoman: strings.counterLowerRoman,
+      ListCounterType.upperRoman: strings.counterUpperRoman,
+      ListCounterType.lowerAlpha: strings.counterLowerAlpha,
+      ListCounterType.upperAlpha: strings.counterUpperAlpha,
+    };
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -328,18 +331,18 @@ class _ListEditorState extends State<ListEditor> {
             onPressed: (index) => _setStyle(_styles[index]),
             constraints: const BoxConstraints(minHeight: 36, minWidth: 44),
             borderRadius: BorderRadius.circular(4),
-            children: const [
+            children: [
               Tooltip(
-                message: 'Unordered',
-                child: Icon(Icons.format_list_bulleted, size: 18),
+                message: strings.listUnordered,
+                child: const Icon(Icons.format_list_bulleted, size: 18),
               ),
               Tooltip(
-                message: 'Ordered',
-                child: Icon(Icons.format_list_numbered, size: 18),
+                message: strings.listOrdered,
+                child: const Icon(Icons.format_list_numbered, size: 18),
               ),
               Tooltip(
-                message: 'Checklist',
-                child: Icon(Icons.checklist, size: 18),
+                message: strings.listChecklist,
+                child: const Icon(Icons.checklist, size: 18),
               ),
             ],
           ),
@@ -352,8 +355,8 @@ class _ListEditorState extends State<ListEditor> {
                 onChanged: _setStart,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Start with',
+                decoration: InputDecoration(
+                  labelText: strings.startWith,
                   hintText: '1',
                   isDense: true,
                 ),
@@ -366,7 +369,7 @@ class _ListEditorState extends State<ListEditor> {
               isDense: true,
               underline: const SizedBox.shrink(),
               items: [
-                for (final entry in _counterTypeLabels.entries)
+                for (final entry in counterTypeLabels.entries)
                   DropdownMenuItem(value: entry.key, child: Text(entry.value)),
               ],
             ),

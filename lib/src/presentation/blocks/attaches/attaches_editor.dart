@@ -99,6 +99,7 @@ class _AttachesEditorState extends State<AttachesEditor> {
   }
 
   Future<void> _pick(AttachmentPicker pick) async {
+    final strings = EditorConfigScope.stringsOf(context);
     setState(() {
       _picking = true;
       _error = null;
@@ -123,7 +124,7 @@ class _AttachesEditorState extends State<AttachesEditor> {
     } catch (_) {
       // The picker is app code and may throw anything. The block keeps the
       // file it had.
-      if (mounted) setState(() => _error = 'Could not attach the file.');
+      if (mounted) setState(() => _error = strings.attachFailed);
     } finally {
       if (mounted) setState(() => _picking = false);
     }
@@ -131,10 +132,11 @@ class _AttachesEditorState extends State<AttachesEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     final picker = EditorConfigScope.maybeOf(context)?.attachmentPicker;
     final details = [
       if (_block.name != null) _block.name!,
-      if (_block.size != null) '${_block.size} bytes',
+      if (_block.size != null) strings.fileSize(_block.size!),
     ].join(' · ');
 
     return Column(
@@ -144,7 +146,7 @@ class _AttachesEditorState extends State<AttachesEditor> {
           TextButton.icon(
             onPressed: _picking ? null : () => _pick(picker),
             icon: const Icon(Icons.attach_file, size: 18),
-            label: const Text('Choose file'),
+            label: Text(strings.chooseFile),
           ),
         if (_picking) const LinearProgressIndicator(),
         if (_error != null)
@@ -163,8 +165,8 @@ class _AttachesEditorState extends State<AttachesEditor> {
           onChanged: _setUrl,
           keyboardType: TextInputType.url,
           autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'File URL',
+          decoration: InputDecoration(
+            labelText: strings.fileUrl,
             hintText: 'https://...',
             isDense: true,
           ),
@@ -180,7 +182,7 @@ class _AttachesEditorState extends State<AttachesEditor> {
         TextField(
           controller: _titleController,
           onChanged: _setTitle,
-          decoration: const InputDecoration(labelText: 'Title', isDense: true),
+          decoration: InputDecoration(labelText: strings.title, isDense: true),
         ),
       ],
     );
