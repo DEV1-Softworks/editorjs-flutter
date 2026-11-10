@@ -176,16 +176,6 @@ class _ListEditorState extends State<ListEditor> {
     return end;
   }
 
-  /// Restores the outline invariant: the first row is at the top level and no
-  /// row is more than one level deeper than the row before it.
-  void _normalizeDepths() {
-    var previous = -1;
-    for (final row in _rows) {
-      if (row.depth > previous + 1) row.depth = previous + 1;
-      previous = row.depth;
-    }
-  }
-
   // ---------------------------------------------------------------------------
   // Edits
   // ---------------------------------------------------------------------------
@@ -217,18 +207,21 @@ class _ListEditorState extends State<ListEditor> {
     });
   }
 
-  /// Removes one row. Its children move up a level rather than disappearing.
+  /// Removes a row together with all of its children.
   void _removeItem(int index) {
     setState(() {
       final end = _subtreeEnd(index);
-      for (var i = index + 1; i < end; i++) {
-        _rows[i].depth--;
+      for (var i = index; i < end; i++) {
+        _rows[i].dispose();
       }
-      _rows.removeAt(index).dispose();
-      _normalizeDepths();
+      _rows.removeRange(index, end);
     });
     _notify();
   }
+
+  /// A row can be removed unless that would empty the list: the list always
+  /// keeps at least one item.
+  bool _canRemove(int index) => _subtreeEnd(index) - index < _rows.length;
 
   /// A row can become a child of the row above it.
   bool _canIndent(int index) =>
@@ -310,7 +303,7 @@ class _ListEditorState extends State<ListEditor> {
                 _RowButton(
                   icon: Icons.remove_circle_outline,
                   tooltip: 'Remove item',
-                  onPressed: _rows.length > 1 ? () => _removeItem(i) : null,
+                  onPressed: _canRemove(i) ? () => _removeItem(i) : null,
                 ),
               ],
             ),

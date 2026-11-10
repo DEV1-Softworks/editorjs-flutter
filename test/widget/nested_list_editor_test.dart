@@ -141,23 +141,34 @@ void main() {
     expect(_outline(changes.last.items), 'a\n  a1\n    a1x\n    a2\nb');
   });
 
-  testWidgets('removing an item moves its children up a level',
-      (tester) async {
+  testWidgets('removing an item removes its children too', (tester) async {
     final changes = await pumpEditor(tester, _nested);
 
-    await tester.tap(button('Remove item', 1)); // a1
+    await tester.tap(button('Remove item', 1)); // a1, parent of a1x
     await tester.pump();
-    expect(_outline(changes.last.items), 'a\n  a1x\n  a2\nb');
+    expect(_outline(changes.last.items), 'a\n  a2\nb');
     expect(find.widgetWithText(TextField, 'a1'), findsNothing);
+    expect(find.widgetWithText(TextField, 'a1x'), findsNothing);
+    expect(find.byType(TextField), findsNWidgets(3));
   });
 
-  testWidgets('removing the first item keeps the outline valid',
+  testWidgets('removing a top-level item removes its whole subtree',
       (tester) async {
     final changes = await pumpEditor(tester, _nested);
 
-    await tester.tap(button('Remove item', 0)); // a
+    await tester.tap(button('Remove item', 0)); // a, with a1, a1x and a2
     await tester.pump();
-    expect(_outline(changes.last.items), 'a1\n  a1x\na2\nb');
+    expect(_outline(changes.last.items), 'b');
+    expect(find.byType(TextField), findsOneWidget);
+  });
+
+  testWidgets('removing an item without children leaves the rest alone',
+      (tester) async {
+    final changes = await pumpEditor(tester, _nested);
+
+    await tester.tap(button('Remove item', 3)); // a2
+    await tester.pump();
+    expect(_outline(changes.last.items), 'a\n  a1\n    a1x\nb');
   });
 
   testWidgets('the last remaining item cannot be removed', (tester) async {
@@ -169,6 +180,22 @@ void main() {
       ),
     );
     expect(enabled(tester, 'Remove item', 0), isFalse);
+  });
+
+  testWidgets('an item cannot be removed if that would empty the list',
+      (tester) async {
+    await pumpEditor(
+      tester,
+      const ListBlock(
+        style: ListStyle.unordered,
+        items: [
+          ListItem(content: 'root', items: [ListItem(content: 'child')]),
+        ],
+      ),
+    );
+    // Removing `root` would take `child` with it and leave nothing.
+    expect(enabled(tester, 'Remove item', 0), isFalse);
+    expect(enabled(tester, 'Remove item', 1), isTrue);
   });
 
   testWidgets('Enter adds a sibling after the item and its children',
