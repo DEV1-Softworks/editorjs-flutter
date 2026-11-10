@@ -6,6 +6,13 @@
 * **Backend-defined fields survive.** `TableBlock.stretched`, `ImageBlock.fileExtras`, `AttachesBlock.fileExtras` and `LinkToolMeta.extras` carry fields such as image `width`/`height` or link `site_name` through a round-trip.
 * **Version stamp updated.** `getContent()` writes `"version": "2.31.7"` (`BlockDocument.editorJsVersion`) instead of the hard-coded `2.19.0`.
 
+### List 2.x (`@editorjs/list` 2.x: nested lists and checklists in one block)
+* **Checklist style.** `ListStyle.checklist` is read, rendered (a tick box per item, at every nesting level), edited and written back; the ticked state lives in the new `ListItem.checked`. Previously a `checklist`-style list was turned into a bullet list and its ticks were lost.
+* **Ordered list numbering.** New `ListBlock.start` and `ListBlock.counterType` (`ListCounterType`: numeric, lower/upper roman, lower/upper alpha) are read, rendered and written back. Nested items are numbered `1.1.`, `1.2.`, … as EditorJS renders them, instead of restarting at `1.`.
+* **List editor.** A style selector switches a list between unordered, ordered and checklist; ordered lists get "Start with" and counter-type options; checklist items get a tick box.
+* **Two checklist buttons in the toolbar.** "Checklist" now adds a list 2.x checklist (a `list` block with `style: "checklist"`); "Checklist (legacy)" adds the older `checklist` block that the button used to create. Which one a site can read depends on the tools installed in its EditorJS instance.
+* **Legacy formats are still read:** `@editorjs/list` 1.x string items, `@editorjs/nested-list` items, and old checklist `{text, checked}` items stored under a list block.
+
 ### Parser hardening
 * A field of the wrong type no longer throws out of `EditorJSView` / `EditorController.fromJson`. Every built-in mapper now reads through tolerant helpers; previously `linkTool.meta: []`, a non-string list `style`, a non-string paragraph `text` and a non-integer document `time` each raised a `TypeError`.
 * `time` accepts integers, doubles and numeric strings; header `level` accepts doubles.
@@ -16,9 +23,12 @@
 * `getContent()` output now contains `id` on every block, `tunes` where present, and `stretched` on tables.
 * `BlockRendererRegistry.buildRenderer` / `buildEditor` return `null` for an `UnknownBlock` even when a builder is registered for its type string.
 * Blocks with a missing or non-string `type` are still dropped: they cannot be written back.
+* The toolbar's "Checklist" button creates a `list` block with the checklist style, no longer a `checklist` block; the previous behaviour moved to the new "Checklist (legacy)" button.
+* `ListStyle` has a third value, `checklist`: an exhaustive `switch` over `ListStyle` in consumer code needs a new case.
+* Lists are always written in the list 2.x shape: `ListBlock.toJson()` adds a root `meta`, and `ListItem.toJson()` adds a per-item `meta`.
 
 ### Tests
-* Added `test/unit/lossless_roundtrip_test.dart`, `test/unit/editor_controller_metadata_test.dart`, `test/unit/json_reader_test.dart` and `test/widget/unknown_block_test.dart` (281 tests in total, 88 % line coverage).
+* Added `test/unit/lossless_roundtrip_test.dart`, `test/unit/editor_controller_metadata_test.dart`, `test/unit/json_reader_test.dart`, `test/unit/list_v2_test.dart`, `test/widget/unknown_block_test.dart` and `test/widget/list_v2_test.dart` (314 tests in total, 90 % line coverage).
 
 ---
 
