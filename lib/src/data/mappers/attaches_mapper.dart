@@ -1,27 +1,25 @@
 import '../../domain/entities/blocks/attaches_block.dart';
+import '../utils/json_reader.dart';
 import 'block_mapper.dart';
 
 class AttachesMapper implements BlockMapper<AttachesBlock> {
   const AttachesMapper();
+
+  static const _knownFileKeys = {'url', 'name', 'extension', 'size'};
 
   @override
   String get supportedType => 'attaches';
 
   @override
   AttachesBlock fromJson(Map<String, dynamic> data) {
-    final file = data['file'] is Map ? data['file'] as Map<String, dynamic> : null;
+    final file = JsonReader.map(data['file']);
     return AttachesBlock(
-      url: file != null && file['url'] is String ? file['url'] as String : '',
-      name: file != null && file['name'] is String ? file['name'] as String : null,
-      extension: file != null && file['extension'] is String
-          ? file['extension'] as String
-          : null,
-      size: switch (file?['size']) {
-        int v => v,
-        num v => v.toInt(),
-        _ => null,
-      },
-      title: data['title'] is String ? data['title'] as String : null,
+      url: JsonReader.string(file?['url']),
+      name: JsonReader.nullableString(file?['name']),
+      extension: JsonReader.nullableString(file?['extension']),
+      size: JsonReader.integer(file?['size']),
+      title: JsonReader.nullableString(data['title']),
+      fileExtras: JsonReader.extras(file, _knownFileKeys),
     );
   }
 }

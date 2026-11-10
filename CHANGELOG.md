@@ -1,3 +1,71 @@
+## [1.0.0] - 2026-11-10 — EditorJS 2.31 parity
+
+### Lossless round-trip with current EditorJS (2.31)
+* **Block ids and tunes are preserved.** `id` and `tunes` are read into the new `BlockDocument.metadata` (`BlockMetadata`) and written back on serialize. `EditorController.blockIds` now holds the EditorJS ids (kept from the document, generated in EditorJS's own 10-character format for new blocks) and the new `EditorController.blockTunes` exposes each block's tunes. Both follow their block through update, move and undo/redo.
+* **Unknown blocks are no longer deleted.** A block with no registered mapper — or whose mapper throws — is kept verbatim as the new `UnknownBlock` entity and written back untouched. The viewer skips it (without leaving a gap) and the editor shows the existing "Unsupported block" placeholder.
+* **Backend-defined fields survive.** `TableBlock.stretched`, `ImageBlock.fileExtras`, `AttachesBlock.fileExtras` and `LinkToolMeta.extras` carry fields such as image `width`/`height` or link `site_name` through a round-trip.
+* **Version stamp updated.** `getContent()` writes `"version": "2.31.7"` (`BlockDocument.editorJsVersion`) instead of the hard-coded `2.19.0`.
+
+### List 2.x (`@editorjs/list` 2.x: nested lists and checklists in one block)
+* **Checklist style.** `ListStyle.checklist` is read, rendered (a tick box per item, at every nesting level), edited and written back; the ticked state lives in the new `ListItem.checked`. Previously a `checklist`-style list was turned into a bullet list and its ticks were lost.
+* **Ordered list numbering.** New `ListBlock.start` and `ListBlock.counterType` (`ListCounterType`: numeric, lower/upper roman, lower/upper alpha) are read, rendered and written back. Nested items are numbered `1.1.`, `1.2.`, … as EditorJS renders them, instead of restarting at `1.`.
+* **List editor.** A style selector switches a list between unordered, ordered and checklist; ordered lists get "Start with" and counter-type options; checklist items get a tick box.
+* **Two checklist buttons in the toolbar.** "Checklist" now adds a list 2.x checklist (a `list` block with `style: "checklist"`); "Checklist (legacy)" adds the older `checklist` block that the button used to create. Which one a site can read depends on the tools installed in its EditorJS instance.
+* **Legacy formats are still read:** `@editorjs/list` 1.x string items, `@editorjs/nested-list` items, and old checklist `{text, checked}` items stored under a list block.
+
+### Viewer fidelity
+* **Tables are now visible.** The table renderer laid its columns out at zero width, so every table showed as a thin strip with one letter per line. As in EditorJS, a table now spans the full width with equal columns and wraps the text in its cells. A table with too many columns to keep them 96 px wide scrolls sideways instead of squeezing them.
+* **Inline formatting and entities are rendered everywhere.** Headers, table cells, legacy checklist items, warning title and message, and image, embed and quote captions showed markup such as `<b>` and `&amp;` literally. All text now goes through one widget, so bold, italic, links, marker, inline code and entities render in every block.
+* **Links can be tapped.** `<a>` links did nothing. Web links (`http`, `https`) now open in the external application; other schemes are opt-in through the new `EditorConfig.allowedLinkSchemes` (for example `{'http', 'https', 'mailto', 'tel'}`). To handle taps yourself, pass the new `EditorConfig.onLinkTap`. Link, embed and attachment cards go through the same path. Custom renderers can join in with `EditorLinkScope.open(context, url)`.
+* **Blocks line up.** Paragraph, quote and raw text had an extra 8 px left and right margin that headers and tables did not; list markers sat about 6 px above their item's text. Both are fixed, and list items are spaced 8 px apart.
+
+### Editor improvements
+* **Image editor.** New `EditorConfig.imageUploader` stores a picked image and returns its public URL (and any extra file fields), like the uploader of the EditorJS image tool; without one the path of the file on the device is stored, as before. The editor gained fields for the image URL and the caption, toggles for border, stretch and background, an upload progress bar, and error messages for failed picks and uploads. Picking a new image no longer resets the caption and the display options.
+* **Links in paragraphs.** The paragraph format bar has a "Link" button: it links the selected text (or inserts the address as a link when nothing is selected), and when the caret is in an existing link it edits or removes that link. A bare address such as `example.com` is completed to `https://example.com`.
+* **Heading level.** The header editor has an H1–H6 selector; the level used to be fixed when the block was created.
+* **Nested lists.** Every list item is editable, at any depth: items can be indented under the one above, outdented, and removed (removing an item removes its children too). Enter adds an item below the current one. Nested items used to be invisible in the editor.
+* **Configurable toolbar.** `EditorConfig.toolbarItems` takes the `EditorToolbarItem` buttons to show, in order; the default is every button.
+* New `ImageBlock.copyWith`.
+* **Editors for embed, link, attachment and raw blocks.** These four were viewer-only and showed an "Unsupported block" placeholder in the editor; each now has an editor and a toolbar button (`EditorToolbarItem.embed`, `linkPreview`, `attachment`, `rawHtml`).
+  * *Embed:* give a link; the service and embed URL are worked out with the patterns of `@editorjs/embed` (YouTube, Vimeo, X/Twitter, Instagram, CodePen, Figma and others).
+  * *Link:* link, title, description and preview image; the new `EditorConfig.linkPreviewFetcher` adds a "Fetch preview" button, the counterpart of the link tool's backend endpoint.
+  * *Attachment:* file URL and title; the new `EditorConfig.attachmentPicker` adds a "Choose file" button for apps that bring their own file picker and upload.
+  * *Raw:* the HTML source.
+
+### Translatable text
+* **Every label, tooltip, hint and message can be translated or reworded.** New `EditorConfig.strings` takes an `EditorStrings`, which holds all 104 texts the editor and the viewer show on their own, with English defaults; override only the ones you need. Texts that include a value (a heading level, a file size) are functions. Until now all text was hard-coded in English.
+* **Spanish and French are bundled.** `EditorTranslations.es` and `EditorTranslations.fr` are complete translations; `EditorTranslations.forLanguage(code)` picks one from a language code or locale tag and falls back to English. The README explains how to add another language, in an app or in the package.
+
+### Requirements and dependencies
+* **The minimum is now declared as Flutter 3.27 (Dart 3.6).** Earlier releases declared Flutter 3.10 but already used `Color.withValues`, which arrived in 3.27, so on an older Flutter the package installed and then failed to compile. Nothing changes for apps that could build it.
+* **`html` is capped below 0.15.7.** `html` 0.15.7 removed a function that `flutter_html` 3.0.0 calls, so an app that resolved to it failed to compile. The package now depends on `html: ">=0.15.5 <0.15.7"` until `flutter_html` supports the newer version. An app that needs `html` 0.15.7 or later for another package will get a version conflict.
+* `flutter_html`: `^3.0.0-beta.2` → `^3.0.0`. The pre-release versions are no longer accepted.
+
+### CI and workflow
+* CI also runs on pushes and pull requests to `develop`.
+* `CLAUDE.md` and the README describe the git flow the project uses: work branches from `develop`, releases from `release/<version>` into `master`.
+
+### Parser hardening
+* A field of the wrong type no longer throws out of `EditorJSView` / `EditorController.fromJson`. Every built-in mapper now reads through tolerant helpers; previously `linkTool.meta: []`, a non-string list `style`, a non-string paragraph `text` and a non-integer document `time` each raised a `TypeError`.
+* `time` accepts integers, doubles and numeric strings; header `level` accepts doubles.
+
+### Behaviour changes
+* `BlockDocument.blocks`, `EditorController.blocks` and `blockCount` now include `UnknownBlock`s for unrecognised types, where such blocks used to be dropped.
+* `EditorController.blockIds` values are EditorJS-style ids rather than `b0`, `b1`, …
+* `getContent()` output now contains `id` on every block, `tunes` where present, and `stretched` on tables.
+* `BlockRendererRegistry.buildRenderer` / `buildEditor` return `null` for an `UnknownBlock` even when a builder is registered for its type string.
+* Blocks with a missing or non-string `type` are still dropped: they cannot be written back.
+* The toolbar's "Checklist" button creates a `list` block with the checklist style, no longer a `checklist` block; the previous behaviour moved to the new "Checklist (legacy)" button.
+* Link, embed and attachment cards no longer raise an unhandled error when the platform cannot open a link.
+* Paragraph, quote and raw blocks are 16 px wider (no horizontal margin) and list rows are closer together.
+* `ListStyle` has a third value, `checklist`: an exhaustive `switch` over `ListStyle` in consumer code needs a new case.
+* Lists are always written in the list 2.x shape: `ListBlock.toJson()` adds a root `meta`, and `ListItem.toJson()` adds a per-item `meta`.
+
+### Tests
+* Added `test/unit/lossless_roundtrip_test.dart`, `editor_controller_metadata_test.dart`, `json_reader_test.dart`, `list_v2_test.dart`, `embed_services_test.dart` and `translations_test.dart`; and `test/widget/unknown_block_test.dart`, `list_v2_test.dart`, `viewer_fidelity_test.dart`, `header_level_test.dart`, `toolbar_items_test.dart`, `image_editor_test.dart`, `nested_list_editor_test.dart`, `media_block_editors_test.dart`, `paragraph_link_test.dart` and `localization_test.dart` (469 tests in total, 95 % line coverage).
+
+---
+
 ## [0.5.0] - 2026-03-25 — Publication readiness
 
 ### New API

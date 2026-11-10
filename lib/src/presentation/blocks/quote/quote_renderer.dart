@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 
-import '../../../data/utils/html_sanitizer.dart';
 import '../../../domain/entities/blocks/quote_block.dart';
-import '../../utils/html_style_builder.dart';
+import '../../widgets/inline_html.dart';
 import '../base_block_renderer.dart';
 
 class QuoteRenderer extends BlockRenderer<QuoteBlock> {
@@ -15,17 +14,6 @@ class QuoteRenderer extends BlockRenderer<QuoteBlock> {
       QuoteAlignment.center => TextAlign.center,
       QuoteAlignment.right => TextAlign.right,
       QuoteAlignment.left => TextAlign.left,
-    };
-
-    final baseStyles = HtmlStyleBuilder.build(styleConfig);
-    final baseBodyStyle = baseStyles['body'] ?? Style();
-    final mergedBodyStyle = baseBodyStyle.copyWith(
-      textAlign: align,
-      fontFamily: styleConfig?.defaultFont,
-    );
-    final styleMap = {
-      ...baseStyles,
-      'body': mergedBodyStyle,
     };
 
     return Container(
@@ -42,21 +30,23 @@ class QuoteRenderer extends BlockRenderer<QuoteBlock> {
       child: Column(
         crossAxisAlignment: _crossAlignment(block.alignment),
         children: [
-          Html(
-            data: HtmlSanitizer.sanitize(block.text),
-            style: styleMap,
+          InlineHtml(
+            block.text,
+            styleConfig: styleConfig,
+            bodyStyle: Style(textAlign: align),
+            compact: false,
           ),
           if (block.caption != null && block.caption!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text(
+              child: InlineHtml(
                 '— ${block.caption}',
-                textAlign: align,
-                style: TextStyle(
+                styleConfig: styleConfig,
+                bodyStyle: Style(
+                  textAlign: align,
                   fontStyle: FontStyle.italic,
                   color: Colors.grey.shade600,
-                  fontSize: 12,
-                  fontFamily: styleConfig?.defaultFont,
+                  fontSize: FontSize(12),
                 ),
               ),
             ),

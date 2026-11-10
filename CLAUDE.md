@@ -36,7 +36,7 @@ fvm flutter test test/editorjs_flutter_test.dart
 
 ## Architecture
 
-The package follows **Clean Architecture** with three strict layers. Dependencies only flow inward (presentation → data → domain). No new external dependencies — only `flutter_html`, `image_picker`, `url_launcher`, and Flutter's built-in `ChangeNotifier`.
+The package follows **Clean Architecture** with three strict layers. Dependencies only flow inward (presentation → data → domain). No new external dependencies — only `flutter_html`, `image_picker`, `url_launcher`, and Flutter's built-in `ChangeNotifier`. (`html` is listed in `pubspec.yaml` only to cap the version `flutter_html` resolves to; the package does not import it.)
 
 ```
 lib/src/
@@ -109,20 +109,20 @@ final config = EditorConfig(
 
 | Block | Viewer | Editor | Notes |
 |---|---|---|---|
-| `header` | H1–H6 | ✅ | |
-| `paragraph` | HTML via flutter_html | ✅ | Inline format bar (B/I/U/S/code/mark) |
-| `list` | Ordered / unordered / nested | ✅ | |
+| `header` | H1–H6, inline HTML | ✅ | |
+| `paragraph` | HTML via flutter_html | ✅ | Inline format bar (B/I/U/S/code/mark/link); the link button adds, edits and removes `<a>` |
+| `list` | Ordered (start, counter type) / unordered / checklist / nested | ✅ | `@editorjs/list` 2.x format; legacy list, nested-list and checklist data is read too. Nested items are edited as an outline (indent / outdent) |
 | `delimiter` | Divider | ✅ | |
-| `image` | Network URL | ✅ | caption/border/stretch parsed; image_picker not wired |
+| `image` | Network URL, caption, border / stretch / background | ✅ | Editor picks from camera or gallery and uploads through `EditorConfig.imageUploader`; without an uploader the local file path is stored |
 | `quote` | With alignment | ✅ | |
 | `code` | Monospace + copy button | ✅ | |
-| `checklist` | Checked / unchecked | ✅ | |
-| `table` | With optional heading row | ✅ | |
-| `warning` | Title + message | ✅ | |
-| `embed` | Tappable card | Viewer only | |
-| `linkTool` | Link preview card | Viewer only | |
-| `attaches` | File download card | Viewer only | |
-| `raw` | Sanitized HTML | Viewer only | |
+| `checklist` | Checked / unchecked | ✅ | Legacy `@editorjs/checklist` block; toolbar button "Checklist (legacy)". The toolbar's "Checklist" button creates a `list` block with the checklist style |
+| `table` | Optional heading row, inline HTML in cells | ✅ | Full width with equal columns, text wraps; scrolls horizontally when columns would be narrower than 96 px. `stretched` is preserved but has no visual effect |
+| `warning` | Title + message, inline HTML | ✅ | |
+| `embed` | Tappable card | ✅ | Service and embed URL derived from the link with the `@editorjs/embed` patterns (`data/utils/embed_services.dart`) |
+| `linkTool` | Link preview card | ✅ | Preview fields typed by hand or fetched through `EditorConfig.linkPreviewFetcher` |
+| `attaches` | File download card | ✅ | File given as a URL or through `EditorConfig.attachmentPicker` (no bundled file picker) |
+| `raw` | Sanitized HTML | ✅ | Editor shows the HTML source |
 
 ---
 
@@ -130,12 +130,12 @@ final config = EditorConfig(
 
 `lib/editorjs_flutter.dart` is the sole entry point. It exports:
 
-- **Widgets**: `EditorJSView`, `EditorJSEditor`
+- **Widgets**: `EditorJSView`, `EditorJSEditor`, `EditorLinkScope` (lets custom renderers open links through `EditorConfig.onLinkTap`)
 - **Controller**: `EditorController`
-- **Config**: `EditorConfig`
+- **Config**: `EditorConfig`, `EditorToolbarItem`, `ImageUploader` / `PickedImage` / `UploadedImage`, `LinkPreviewFetcher`, `AttachmentPicker`, `EditorStrings`, `EditorTranslations` (bundled `es` and `fr`)
 - **Registries**: `BlockTypeRegistry`, `BlockRendererRegistry`
-- **Contracts** (for custom block authors): `BlockMapper`, `BlockRenderer`, `BlockEditor`, `BlockEntity`, `BlockDocument`, `StyleConfig`
-- **Built-in entities**: `HeaderBlock`, `ParagraphBlock`, `ListBlock`, `DelimiterBlock`, `ImageBlock`
+- **Contracts** (for custom block authors): `BlockMapper`, `BlockRenderer`, `BlockEditor`, `BlockEntity`, `BlockDocument`, `BlockMetadata`, `StyleConfig`
+- **Built-in entities**: `HeaderBlock`, `ParagraphBlock`, `ListBlock`, `DelimiterBlock`, `ImageBlock`, and the other block entities; `UnknownBlock` holds any block the package cannot interpret so it round-trips untouched
 
 Nothing from `lib/src/` should be imported directly by consumers.
 
@@ -159,7 +159,7 @@ When building new features, always work bottom-up:
 - `lib/src/data/registry/block_type_registry.dart` — JSON parsing extension point
 - `lib/src/presentation/registry/block_renderer_registry.dart` — rendering extension point
 - `lib/src/presentation/controller/editor_controller.dart` — editor state + `getContent()`
-- `lib/src/presentation/widgets/` — thin shell widgets
+- `lib/src/presentation/widgets/` — thin shell widgets, plus `inline_html.dart`: the one widget every renderer uses to show EditorJS text (sanitizing, styling, link taps)
 - `demo/lib/main.dart` — viewer usage example
 - `demo/lib/createnote.dart` — editor usage example
 - `demo/test_data/` — sample EditorJS JSON and styles JSON
@@ -172,30 +172,37 @@ When building new features, always work bottom-up:
 4. Run `fvm flutter test --coverage` locally and verify the coverage threshold.
 5. Follow the Clean Architecture layer rules: no Flutter imports in `domain/`, no direct widget dependencies in `data/`.
 6. New block types must be added bottom-up: entity → mapper → renderer → (editor) → register in both registries → export from barrel.
+7. No hard-coded user-visible text in widgets. Add a field to `EditorStrings` and read it with `EditorConfigScope.stringsOf(context)`; `test/widget/localization_test.dart` fails when a widget shows text that did not come from there. Every new text must also be added to each file in `lib/src/presentation/config/translations/`; `test/unit/translations_test.dart` fails when a bundled translation is incomplete.
 
 ## Git Workflow
 
-**This repo has branch protection. Direct commits to `master` are not allowed.**
+**This repo follows git flow. Direct commits to `master` or `develop` are not allowed.**
+
+- `master` holds released versions only.
+- `develop` is the integration branch: every feature, fix and chore is merged here first.
+- `release/<version>` is cut from `develop` when a version is ready, and is merged into `master`.
 
 ### Before starting any coding task
 
-1. Ensure `master` is up to date and create a new branch:
+1. Ensure `develop` is up to date and create a new branch from it:
    ```bash
-   git checkout master
+   git checkout develop
    git pull
    git checkout -b <prefix>/<short-description>
    ```
+   Always branch from `develop`, never from another work branch: one branch and one PR per task.
 2. Use these branch name prefixes:
    - `feat/` — new feature or block type
    - `fix/` — bug fix
    - `refactor/` — internal restructuring with no behaviour change
    - `chore/` — dependency bumps, tooling, docs
+   - `release/` — release branch, named after the version (`release/1.0.0`)
 
 ### Before finishing any coding task
 
 1. Run `fvm flutter analyze` — must report **no issues** before marking work done.
 2. Generate a `PR_DESCRIPTION.md` file at the repo root (see template below).
-3. All changes go to `master` via Pull Request only — never push directly.
+3. All changes go to `develop` via Pull Request only — never push directly. Only a release branch is merged into `master`.
 4. Delete `PR_DESCRIPTION.md` after the PR is merged.
 
 ### PR_DESCRIPTION.md template
@@ -226,22 +233,30 @@ When building new features, always work bottom-up:
 - [ ] Demo app tested manually on at least one platform
 ```
 
+### Releasing
+
+1. Cut `release/<version>` from `develop`.
+2. On that branch, set the version in `pubspec.yaml`, turn the `[Unreleased]` section of `CHANGELOG.md` into the entry for the version, and update the version references in `README.md` and in this file. Apart from that, only fixes found while preparing the release go on this branch.
+3. Open a PR from the release branch into `master`. CI must pass.
+4. After the merge, merge `master` back into `develop`.
+
 ---
 
 ## Versioning
 
-Current version: `0.5.0` (in `pubspec.yaml`).
+Current version: `1.0.0` (in `pubspec.yaml`).
 
-When making changes, always update `CHANGELOG.md` with a new entry at the top following the existing format:
-- Bump the patch version for bug fixes
-- Bump the minor version for new features or breaking API changes
+The package follows semantic versioning. When making changes, add a note to the `## [Unreleased]` section at the top of `CHANGELOG.md` (create it if it is missing), following the existing format. Do not change the version on a work branch; it is set on the release branch:
+- Patch version for bug fixes
+- Minor version for new features
+- Major version for breaking changes to the public API
 - Keep `pubspec.yaml` version in sync with `CHANGELOG.md`
 
 ## Known Issues / Backlog
 
-- `image_picker` is declared as a dependency but `ImageEditor` only accepts a URL string — picker not wired up
+- `ImageEditor` imports `dart:io` for the local-file preview; on the web it falls back to `Image.network`, but this path is untested
 - No `EditorController` content persistence to local storage (save/load)
-- No inline link editor in paragraph (currently inserts a `<a>` paragraph block via dialog)
+- The paragraph editor shows the HTML source (tags are visible while editing); the format bar inserts tags rather than styling text in place
 - No drag-to-reorder for blocks (only up/down buttons)
 - Typing history not tracked by undo/redo (only structural operations are undoable)
 - pub.dev publication pending — description, topics, and example are ready but package has not been published yet

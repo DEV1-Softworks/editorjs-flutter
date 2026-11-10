@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/entities/blocks/attaches_block.dart';
 import '../../domain/entities/blocks/checklist_block.dart';
 import '../../domain/entities/blocks/code_block.dart';
 import '../../domain/entities/blocks/delimiter_block.dart';
+import '../../domain/entities/blocks/embed_block.dart';
 import '../../domain/entities/blocks/header_block.dart';
 import '../../domain/entities/blocks/image_block.dart';
+import '../../domain/entities/blocks/link_tool_block.dart';
 import '../../domain/entities/blocks/list_block.dart';
 import '../../domain/entities/blocks/paragraph_block.dart';
 import '../../domain/entities/blocks/quote_block.dart';
+import '../../domain/entities/blocks/raw_block.dart';
 import '../../domain/entities/blocks/table_block.dart';
 import '../../domain/entities/blocks/warning_block.dart';
+import '../config/editor_strings.dart';
+import '../config/editor_toolbar_item.dart';
 import '../controller/editor_controller.dart';
 import '../registry/block_renderer_registry.dart';
+import 'editor_config_scope.dart';
 
 /// Toolbar for [EditorJSEditor].
 ///
@@ -21,14 +28,20 @@ class EditorJSToolbar extends StatelessWidget {
   final EditorController controller;
   final BlockRendererRegistry rendererRegistry;
 
+  /// The buttons to show, in order. Defaults to every button.
+  final List<EditorToolbarItem> items;
+
   const EditorJSToolbar({
     super.key,
     required this.controller,
     required this.rendererRegistry,
+    this.items = EditorToolbarItem.values,
   });
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
+
     return SafeArea(
       child: Container(
         decoration: BoxDecoration(
@@ -39,113 +52,7 @@ class EditorJSToolbar extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              // --- Text blocks ---
-              _ToolbarButton(
-                label: 'T',
-                tooltip: 'Paragraph',
-                onTap: () => controller.addBlock(const ParagraphBlock(html: '')),
-              ),
-              for (int level = 1; level <= 6; level++)
-                _ToolbarButton(
-                  label: 'H$level',
-                  tooltip: 'Heading $level',
-                  onTap: () =>
-                      controller.addBlock(HeaderBlock(text: '', level: level)),
-                ),
-              _ToolbarButton(
-                icon: Icons.format_quote,
-                tooltip: 'Quote',
-                onTap: () =>
-                    controller.addBlock(const QuoteBlock(text: '')),
-              ),
-              _ToolbarButton(
-                icon: Icons.code,
-                tooltip: 'Code',
-                onTap: () => controller.addBlock(const CodeBlock(code: '')),
-              ),
-              // --- Lists ---
-              _ToolbarButton(
-                icon: Icons.format_list_bulleted,
-                tooltip: 'Unordered list',
-                onTap: () => controller.addBlock(
-                  const ListBlock(
-                    style: ListStyle.unordered,
-                    items: [ListItem(content: '')],
-                  ),
-                ),
-              ),
-              _ToolbarButton(
-                icon: Icons.format_list_numbered,
-                tooltip: 'Ordered list',
-                onTap: () => controller.addBlock(
-                  const ListBlock(
-                    style: ListStyle.ordered,
-                    items: [ListItem(content: '')],
-                  ),
-                ),
-              ),
-              _ToolbarButton(
-                icon: Icons.checklist,
-                tooltip: 'Checklist',
-                onTap: () => controller.addBlock(
-                  const ChecklistBlock(
-                    items: [ChecklistItem(text: '')],
-                  ),
-                ),
-              ),
-              // --- Structural ---
-              _ToolbarButton(
-                icon: Icons.table_chart_outlined,
-                tooltip: 'Table',
-                onTap: () => controller.addBlock(
-                  const TableBlock(
-                    content: [
-                      ['', ''],
-                      ['', ''],
-                    ],
-                  ),
-                ),
-              ),
-              _ToolbarButton(
-                icon: Icons.horizontal_rule,
-                tooltip: 'Delimiter',
-                onTap: () => controller.addBlock(const DelimiterBlock()),
-              ),
-              _ToolbarButton(
-                icon: Icons.warning_amber_outlined,
-                tooltip: 'Warning',
-                onTap: () =>
-                    controller.addBlock(const WarningBlock(title: '', message: '')),
-              ),
-              // --- Media ---
-              _ToolbarButton(
-                icon: Icons.image_outlined,
-                tooltip: 'Image',
-                onTap: () => controller.addBlock(const ImageBlock(url: '')),
-              ),
-              _ToolbarButton(
-                icon: Icons.link,
-                tooltip: 'Hyperlink',
-                onTap: () => _showHyperlinkDialog(context),
-              ),
-              // --- Actions ---
-              _ToolbarButton(
-                icon: Icons.undo,
-                tooltip: 'Undo',
-                onTap: controller.canUndo ? controller.undo : null,
-              ),
-              _ToolbarButton(
-                icon: Icons.redo,
-                tooltip: 'Redo',
-                onTap: controller.canRedo ? controller.redo : null,
-              ),
-              _ToolbarButton(
-                icon: Icons.delete_outline,
-                tooltip: 'Remove last block',
-                onTap: controller.blockCount > 0
-                    ? () => controller.removeBlock(controller.blockCount - 1)
-                    : null,
-              ),
+              for (final item in items) _buildButton(context, item, strings),
             ],
           ),
         ),
@@ -153,20 +60,178 @@ class EditorJSToolbar extends StatelessWidget {
     );
   }
 
-  void _showHyperlinkDialog(BuildContext context) {
+  Widget _buildButton(
+    BuildContext context,
+    EditorToolbarItem item,
+    EditorStrings strings,
+  ) {
+    return switch (item) {
+      // --- Text blocks ---
+      EditorToolbarItem.paragraph => _ToolbarButton(
+          label: strings.paragraphLabel,
+          tooltip: strings.paragraph,
+          onTap: () => controller.addBlock(const ParagraphBlock(html: '')),
+        ),
+      EditorToolbarItem.heading1 => _headingButton(1, strings),
+      EditorToolbarItem.heading2 => _headingButton(2, strings),
+      EditorToolbarItem.heading3 => _headingButton(3, strings),
+      EditorToolbarItem.heading4 => _headingButton(4, strings),
+      EditorToolbarItem.heading5 => _headingButton(5, strings),
+      EditorToolbarItem.heading6 => _headingButton(6, strings),
+      EditorToolbarItem.quote => _ToolbarButton(
+          icon: Icons.format_quote,
+          tooltip: strings.quote,
+          onTap: () => controller.addBlock(const QuoteBlock(text: '')),
+        ),
+      EditorToolbarItem.code => _ToolbarButton(
+          icon: Icons.code,
+          tooltip: strings.code,
+          onTap: () => controller.addBlock(const CodeBlock(code: '')),
+        ),
+      // --- Lists ---
+      EditorToolbarItem.unorderedList => _ToolbarButton(
+          icon: Icons.format_list_bulleted,
+          tooltip: strings.unorderedList,
+          onTap: () => controller.addBlock(
+            const ListBlock(
+              style: ListStyle.unordered,
+              items: [ListItem(content: '')],
+            ),
+          ),
+        ),
+      EditorToolbarItem.orderedList => _ToolbarButton(
+          icon: Icons.format_list_numbered,
+          tooltip: strings.orderedList,
+          onTap: () => controller.addBlock(
+            const ListBlock(
+              style: ListStyle.ordered,
+              items: [ListItem(content: '')],
+            ),
+          ),
+        ),
+      // Two checklists on purpose: which one a document can use depends on
+      // the tools installed in the EditorJS instance that reads it.
+      // `@editorjs/list` 2.x stores a checklist as a list block …
+      EditorToolbarItem.checklist => _ToolbarButton(
+          icon: Icons.checklist,
+          tooltip: strings.checklist,
+          onTap: () => controller.addBlock(
+            const ListBlock(
+              style: ListStyle.checklist,
+              items: [ListItem(content: '')],
+            ),
+          ),
+        ),
+      // … while the older `@editorjs/checklist` tool has its own block.
+      EditorToolbarItem.legacyChecklist => _ToolbarButton(
+          icon: Icons.check_box_outlined,
+          tooltip: strings.legacyChecklist,
+          onTap: () => controller.addBlock(
+            const ChecklistBlock(
+              items: [ChecklistItem(text: '')],
+            ),
+          ),
+        ),
+      // --- Structural ---
+      EditorToolbarItem.table => _ToolbarButton(
+          icon: Icons.table_chart_outlined,
+          tooltip: strings.table,
+          onTap: () => controller.addBlock(
+            const TableBlock(
+              content: [
+                ['', ''],
+                ['', ''],
+              ],
+            ),
+          ),
+        ),
+      EditorToolbarItem.delimiter => _ToolbarButton(
+          icon: Icons.horizontal_rule,
+          tooltip: strings.delimiter,
+          onTap: () => controller.addBlock(const DelimiterBlock()),
+        ),
+      EditorToolbarItem.warning => _ToolbarButton(
+          icon: Icons.warning_amber_outlined,
+          tooltip: strings.warning,
+          onTap: () =>
+              controller.addBlock(const WarningBlock(title: '', message: '')),
+        ),
+      // --- Media ---
+      EditorToolbarItem.image => _ToolbarButton(
+          icon: Icons.image_outlined,
+          tooltip: strings.image,
+          onTap: () => controller.addBlock(const ImageBlock(url: '')),
+        ),
+      EditorToolbarItem.embed => _ToolbarButton(
+          icon: Icons.smart_display_outlined,
+          tooltip: strings.embed,
+          onTap: () => controller.addBlock(
+            const EmbedBlock(service: '', source: '', embed: ''),
+          ),
+        ),
+      EditorToolbarItem.linkPreview => _ToolbarButton(
+          icon: Icons.add_link,
+          tooltip: strings.linkPreview,
+          onTap: () => controller.addBlock(const LinkToolBlock(link: '')),
+        ),
+      EditorToolbarItem.attachment => _ToolbarButton(
+          icon: Icons.attach_file,
+          tooltip: strings.attachment,
+          onTap: () => controller.addBlock(const AttachesBlock(url: '')),
+        ),
+      EditorToolbarItem.rawHtml => _ToolbarButton(
+          icon: Icons.html,
+          tooltip: strings.rawHtml,
+          onTap: () => controller.addBlock(const RawBlock(html: '')),
+        ),
+      EditorToolbarItem.hyperlink => _ToolbarButton(
+          icon: Icons.link,
+          tooltip: strings.hyperlink,
+          onTap: () => _showHyperlinkDialog(context, strings),
+        ),
+      // --- Actions ---
+      EditorToolbarItem.undo => _ToolbarButton(
+          icon: Icons.undo,
+          tooltip: strings.undo,
+          onTap: controller.canUndo ? controller.undo : null,
+        ),
+      EditorToolbarItem.redo => _ToolbarButton(
+          icon: Icons.redo,
+          tooltip: strings.redo,
+          onTap: controller.canRedo ? controller.redo : null,
+        ),
+      EditorToolbarItem.removeLastBlock => _ToolbarButton(
+          icon: Icons.delete_outline,
+          tooltip: strings.removeLastBlock,
+          onTap: controller.blockCount > 0
+              ? () => controller.removeBlock(controller.blockCount - 1)
+              : null,
+        ),
+    };
+  }
+
+  Widget _headingButton(int level, EditorStrings strings) => _ToolbarButton(
+        label: strings.headingLabel(level),
+        tooltip: strings.heading(level),
+        onTap: () => controller.addBlock(HeaderBlock(text: '', level: level)),
+      );
+
+  void _showHyperlinkDialog(BuildContext context, EditorStrings strings) {
     final titleController = TextEditingController();
     final urlController = TextEditingController();
 
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add hyperlink'),
+        title: Text(strings.addHyperlinkTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(hintText: 'Link title'),
+              decoration: InputDecoration(
+                hintText: strings.hyperlinkTitleHint,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -179,7 +244,7 @@ class EditorJSToolbar extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(strings.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -192,7 +257,7 @@ class EditorJSToolbar extends StatelessWidget {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Add'),
+            child: Text(strings.add),
           ),
         ],
       ),

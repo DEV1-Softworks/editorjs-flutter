@@ -10,16 +10,21 @@ import '../../domain/entities/blocks/list_block.dart';
 import '../../domain/entities/blocks/paragraph_block.dart';
 import '../../domain/entities/blocks/quote_block.dart';
 import '../../domain/entities/blocks/table_block.dart';
+import '../../domain/entities/blocks/unknown_block.dart';
 import '../../domain/entities/blocks/attaches_block.dart';
 import '../../domain/entities/blocks/embed_block.dart';
 import '../../domain/entities/blocks/link_tool_block.dart';
 import '../../domain/entities/blocks/raw_block.dart';
 import '../../domain/entities/blocks/warning_block.dart';
 import '../../domain/entities/style_config.dart';
+import '../blocks/attaches/attaches_editor.dart';
 import '../blocks/attaches/attaches_renderer.dart';
 import '../blocks/checklist/checklist_editor.dart';
+import '../blocks/embed/embed_editor.dart';
 import '../blocks/embed/embed_renderer.dart';
+import '../blocks/link_tool/link_tool_editor.dart';
 import '../blocks/link_tool/link_tool_renderer.dart';
+import '../blocks/raw/raw_editor.dart';
 import '../blocks/raw/raw_renderer.dart';
 import '../blocks/checklist/checklist_renderer.dart';
 import '../blocks/code/code_editor.dart';
@@ -113,6 +118,14 @@ class BlockRendererRegistry {
         (b, cb) => TableEditor(block: b as TableBlock, onChanged: (u) => cb(u)));
     registerEditor('warning',
         (b, cb) => WarningEditor(block: b as WarningBlock, onChanged: (u) => cb(u)));
+    registerEditor('embed',
+        (b, cb) => EmbedEditor(block: b as EmbedBlock, onChanged: (u) => cb(u)));
+    registerEditor('linkTool',
+        (b, cb) => LinkToolEditor(block: b as LinkToolBlock, onChanged: (u) => cb(u)));
+    registerEditor('attaches',
+        (b, cb) => AttachesEditor(block: b as AttachesBlock, onChanged: (u) => cb(u)));
+    registerEditor('raw',
+        (b, cb) => RawEditor(block: b as RawBlock, onChanged: (u) => cb(u)));
   }
 
   void registerRenderer(String type, BlockRendererBuilder builder) {
@@ -124,12 +137,19 @@ class BlockRendererRegistry {
   }
 
   /// Returns the renderer widget, or `null` for unregistered types.
+  ///
+  /// An [UnknownBlock] always yields `null`, even when its type string has a
+  /// registered builder: it holds raw data the builder's entity cast would
+  /// reject (this is how a block with unreadable `data` is represented).
   Widget? buildRenderer(BlockEntity block, StyleConfig? styleConfig) {
+    if (block is UnknownBlock) return null;
     return _renderers[block.type]?.call(block, styleConfig);
   }
 
-  /// Returns the editor widget, or `null` for unregistered types.
+  /// Returns the editor widget, or `null` for unregistered types and for
+  /// [UnknownBlock]s (see [buildRenderer]).
   Widget? buildEditor(BlockEntity block, ValueChanged<BlockEntity> onChanged) {
+    if (block is UnknownBlock) return null;
     return _editors[block.type]?.call(block, onChanged);
   }
 

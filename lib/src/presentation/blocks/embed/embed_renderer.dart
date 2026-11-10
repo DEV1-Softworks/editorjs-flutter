@@ -1,28 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 import '../../../domain/entities/blocks/embed_block.dart';
+import '../../widgets/editor_link_scope.dart';
+import '../../widgets/inline_html.dart';
 import '../base_block_renderer.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class EmbedRenderer extends BlockRenderer<EmbedBlock> {
   const EmbedRenderer({super.key, required super.block, super.styleConfig});
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return InkWell(
       onTap: block.source.isNotEmpty
-          ? () async {
-              final uri = Uri.tryParse(block.source);
-              if (uri == null) return;
-              final scheme = uri.scheme.toLowerCase();
-              if (scheme != 'http' && scheme != 'https') return;
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(
-                  uri,
-                  mode: LaunchMode.externalApplication,
-                );
-              }
-            }
+          ? () => EditorLinkScope.open(context, block.source)
           : null,
       borderRadius: BorderRadius.circular(8),
       child: Container(
@@ -53,7 +46,7 @@ class EmbedRenderer extends BlockRenderer<EmbedBlock> {
                   Text(
                     block.service.isNotEmpty
                         ? _capitalise(block.service)
-                        : 'Embedded content',
+                        : strings.embeddedContent,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
@@ -87,13 +80,13 @@ class EmbedRenderer extends BlockRenderer<EmbedBlock> {
             if (block.caption != null && block.caption!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-                child: Text(
+                child: InlineHtml(
                   block.caption!,
-                  style: TextStyle(
-                    fontSize: 12,
+                  styleConfig: styleConfig,
+                  bodyStyle: Style(
+                    fontSize: FontSize(12),
                     color: Colors.grey.shade600,
                     fontStyle: FontStyle.italic,
-                    fontFamily: styleConfig?.defaultFont,
                   ),
                 ),
               ),

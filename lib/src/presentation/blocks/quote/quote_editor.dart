@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/blocks/quote_block.dart';
 import '../base_block_editor.dart';
+import '../../widgets/editor_config_scope.dart';
 
 class QuoteEditor extends BlockEditor<QuoteBlock> {
   const QuoteEditor({super.key, required super.block, required super.onChanged});
@@ -38,6 +39,7 @@ class _QuoteEditorState extends State<QuoteEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -56,16 +58,16 @@ class _QuoteEditorState extends State<QuoteEditor> {
             onChanged: (_) => _notify(),
             maxLines: null,
             style: const TextStyle(fontStyle: FontStyle.italic),
-            decoration: const InputDecoration(
-              hintText: 'Quote text...',
+            decoration: InputDecoration(
+              hintText: strings.quoteHint,
               border: InputBorder.none,
             ),
           ),
           TextField(
             controller: _captionController,
             onChanged: (_) => _notify(),
-            decoration: const InputDecoration(
-              hintText: 'Caption (optional)',
+            decoration: InputDecoration(
+              hintText: strings.quoteCaptionHint,
               border: InputBorder.none,
               isDense: true,
             ),
@@ -73,13 +75,20 @@ class _QuoteEditorState extends State<QuoteEditor> {
           ),
           Row(
             children: [
-              const Text('Align:', style: TextStyle(fontSize: 12)),
+              Text(strings.align, style: const TextStyle(fontSize: 12)),
               const SizedBox(width: 8),
               for (final a in QuoteAlignment.values)
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
                   child: ChoiceChip(
-                    label: Text(a.name, style: const TextStyle(fontSize: 11)),
+                    label: Text(
+                      switch (a) {
+                        QuoteAlignment.left => strings.alignLeft,
+                        QuoteAlignment.center => strings.alignCenter,
+                        QuoteAlignment.right => strings.alignRight,
+                      },
+                      style: const TextStyle(fontSize: 11),
+                    ),
                     selected: _alignment == a,
                     onSelected: (_) => setState(() {
                       _alignment = a;

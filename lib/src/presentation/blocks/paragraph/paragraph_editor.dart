@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/blocks/paragraph_block.dart';
+import '../../config/editor_strings.dart';
+import '../../widgets/editor_config_scope.dart';
 import '../base_block_editor.dart';
 
 class ParagraphEditor extends BlockEditor<ParagraphBlock> {
@@ -14,7 +16,54 @@ class ParagraphEditor extends BlockEditor<ParagraphBlock> {
   State<ParagraphEditor> createState() => _ParagraphEditorState();
 }
 
+/// An `<a>` element found in the paragraph's HTML.
+class _Anchor {
+  const _Anchor({
+    required this.start,
+    required this.end,
+    required this.attributes,
+    required this.href,
+    required this.inner,
+  });
+
+  /// Range of the whole element, tags included.
+  final int start;
+  final int end;
+
+  /// Everything inside the opening tag after `<a`, as written.
+  final String attributes;
+
+  /// The link target, with HTML entities decoded.
+  final String href;
+
+  /// The HTML between the opening and closing tag.
+  final String inner;
+}
+
+/// What the user chose in the link dialog.
+class _LinkChoice {
+  const _LinkChoice.save(String this.url);
+  const _LinkChoice.remove() : url = null;
+
+  /// The target to link to, or `null` to remove the link.
+  final String? url;
+}
+
 class _ParagraphEditorState extends State<ParagraphEditor> {
+  static final _anchorPattern = RegExp(
+    r'<a\b([^>]*)>(.*?)</a>',
+    caseSensitive: false,
+    dotAll: true,
+  );
+  static final _hrefPattern = RegExp(
+    r'''href\s*=\s*(?:"([^"]*)"|'([^']*)')''',
+    caseSensitive: false,
+  );
+  static final _explicitScheme = RegExp(
+    r'^(?:[a-z][a-z0-9+.-]*://|mailto:|tel:)',
+    caseSensitive: false,
+  );
+
   late final TextEditingController _textController;
   late final FocusNode _focusNode;
   bool _showFormatBar = false;
@@ -76,21 +125,130 @@ class _ParagraphEditorState extends State<ParagraphEditor> {
     _onTextChanged(newText);
   }
 
+  // ---------------------------------------------------------------------------
+  // Links
+  // ---------------------------------------------------------------------------
+
+  /// The link the caret at [offset] is in or next to, if any.
+  static _Anchor? _anchorAt(String html, int offset) {
+    for (final match in _anchorPattern.allMatches(html)) {
+      if (offset < match.start || offset > match.end) continue;
+      final href = _hrefPattern.firstMatch(match.group(1)!);
+      return _Anchor(
+        start: match.start,
+        end: match.end,
+        attributes: match.group(1)!,
+        href: _decodeAttribute(href?.group(1) ?? href?.group(2) ?? ''),
+        inner: match.group(2)!,
+      );
+    }
+    return null;
+  }
+
+  static String _encodeAttribute(String value) => value
+      .replaceAll('&', '&amp;')
+      .replaceAll('"', '&quot;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
+
+  static String _decodeAttribute(String value) => value
+      .replaceAll('&quot;', '"')
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&amp;', '&');
+
+  /// Returns the attributes of an opening `<a` tag with the target replaced by
+  /// [url], keeping any others (`target`, `rel`, …) as they were.
+  static String _withHref(String attributes, String url) {
+    final href = 'href="${_encodeAttribute(url)}"';
+    return _hrefPattern.hasMatch(attributes)
+        ? attributes.replaceFirst(_hrefPattern, href)
+        : ' $href$attributes';
+  }
+
+  /// Completes a typed address such as `example.com` to a web link. Absolute
+  /// URLs, `mailto:`/`tel:` links and in-site targets (`/path`, `#section`)
+  /// are left as typed.
+  static String _normalizeUrl(String input) {
+    final url = input.trim();
+    if (url.isEmpty ||
+        url.startsWith('/') ||
+        url.startsWith('#') ||
+        _explicitScheme.hasMatch(url)) {
+      return url;
+    }
+    return 'https://$url';
+  }
+
+  /// Adds a link to the selected text, or edits or removes the link the caret
+  /// is in.
+  Future<void> _editLink() async {
+    // The dialog takes the focus, so remember where the caret was.
+    final selection = _textController.selection;
+    if (!selection.isValid) return;
+    final html = _textController.text;
+    final anchor = _anchorAt(html, selection.start);
+    // The dialog is built outside this editor's subtree, so it is handed the
+    // texts rather than looking them up itself.
+    final strings = EditorConfigScope.stringsOf(context);
+
+    final choice = await showDialog<_LinkChoice>(
+      context: context,
+      builder: (_) => _LinkDialog(initialUrl: anchor?.href, strings: strings),
+    );
+    if (!mounted || choice == null) return;
+
+    final url = choice.url == null ? null : _normalizeUrl(choice.url!);
+    if (url != null && url.isEmpty) return;
+
+    final int start;
+    final int end;
+    final String replacement;
+    if (anchor != null) {
+      start = anchor.start;
+      end = anchor.end;
+      replacement = url == null
+          ? anchor.inner
+          : '<a${_withHref(anchor.attributes, url)}>${anchor.inner}</a>';
+    } else {
+      if (url == null) return;
+      start = selection.start;
+      end = selection.end;
+      // With nothing selected the address itself becomes the link text.
+      final label = selection.isCollapsed ? url : html.substring(start, end);
+      replacement = '<a href="${_encodeAttribute(url)}">$label</a>';
+    }
+
+    final updated = html.replaceRange(start, end, replacement);
+    _textController.value = TextEditingValue(
+      text: updated,
+      selection: TextSelection.collapsed(offset: start + replacement.length),
+    );
+    _focusNode.requestFocus();
+    _onTextChanged(updated);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_showFormatBar)
-            _InlineFormatBar(onFormat: _applyFormat),
+            _InlineFormatBar(
+              strings: strings,
+              onFormat: _applyFormat,
+              onLink: _editLink,
+            ),
           TextField(
             controller: _textController,
             focusNode: _focusNode,
             onChanged: _onTextChanged,
-            decoration: const InputDecoration(
-              hintText: 'Write something...',
+            decoration: InputDecoration(
+              hintText: strings.paragraphHint,
               border: InputBorder.none,
             ),
             maxLines: null,
@@ -103,9 +261,15 @@ class _ParagraphEditorState extends State<ParagraphEditor> {
 }
 
 class _InlineFormatBar extends StatelessWidget {
+  final EditorStrings strings;
   final void Function(String openTag, String closeTag) onFormat;
+  final VoidCallback onLink;
 
-  const _InlineFormatBar({required this.onFormat});
+  const _InlineFormatBar({
+    required this.strings,
+    required this.onFormat,
+    required this.onLink,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -114,43 +278,114 @@ class _InlineFormatBar extends StatelessWidget {
       child: Row(
         children: [
           _FormatButton(
-            label: 'B',
+            label: strings.boldLabel,
             bold: true,
-            tooltip: 'Bold',
+            tooltip: strings.bold,
             onTap: () => onFormat('<b>', '</b>'),
           ),
           _FormatButton(
-            label: 'I',
+            label: strings.italicLabel,
             italic: true,
-            tooltip: 'Italic',
+            tooltip: strings.italic,
             onTap: () => onFormat('<i>', '</i>'),
           ),
           _FormatButton(
-            label: 'U',
+            label: strings.underlineLabel,
             underline: true,
-            tooltip: 'Underline',
+            tooltip: strings.underline,
             onTap: () => onFormat('<u>', '</u>'),
           ),
           _FormatButton(
-            label: 'S',
+            label: strings.strikethroughLabel,
             strikethrough: true,
-            tooltip: 'Strikethrough',
+            tooltip: strings.strikethrough,
             onTap: () => onFormat('<s>', '</s>'),
           ),
           _FormatButton(
             label: '</>',
             monospace: true,
-            tooltip: 'Inline code',
+            tooltip: strings.inlineCode,
             onTap: () => onFormat('<code>', '</code>'),
           ),
           _FormatButton(
-            label: 'mark',
+            label: strings.highlightLabel,
             highlight: true,
-            tooltip: 'Highlight',
+            tooltip: strings.highlight,
             onTap: () => onFormat('<mark>', '</mark>'),
+          ),
+          _FormatButton(
+            label: strings.linkLabel,
+            underline: true,
+            tooltip: strings.link,
+            onTap: onLink,
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Asks for the target of a link. Pops with a [_LinkChoice], or with nothing
+/// when cancelled.
+class _LinkDialog extends StatefulWidget {
+  /// The current target when an existing link is being edited.
+  final String? initialUrl;
+  final EditorStrings strings;
+
+  const _LinkDialog({this.initialUrl, required this.strings});
+
+  @override
+  State<_LinkDialog> createState() => _LinkDialogState();
+}
+
+class _LinkDialogState extends State<_LinkDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialUrl ?? '');
+
+  bool get _editing => widget.initialUrl != null;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final url = _controller.text.trim();
+    if (url.isEmpty) return;
+    Navigator.pop(context, _LinkChoice.save(url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = widget.strings;
+
+    return AlertDialog(
+      title: Text(_editing ? strings.editLinkTitle : strings.addLinkTitle),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        keyboardType: TextInputType.url,
+        autocorrect: false,
+        onSubmitted: (_) => _save(),
+        decoration: InputDecoration(
+          labelText: strings.linkAddress,
+          hintText: 'https://...',
+        ),
+      ),
+      actions: [
+        if (_editing)
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context, const _LinkChoice.remove()),
+            child: Text(strings.removeLink),
+          ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(strings.cancel),
+        ),
+        TextButton(onPressed: _save, child: Text(strings.save)),
+      ],
     );
   }
 }

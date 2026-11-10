@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../../data/datasources/json_document_source.dart';
 import '../../domain/usecases/parse_document.dart';
 import '../config/editor_config.dart';
+import 'editor_config_scope.dart';
+import 'editor_link_scope.dart';
 
 /// Read-only viewer for EditorJS JSON content.
 ///
 /// Parses [jsonData] and renders each block using the registered renderers.
-/// Unknown block types are silently skipped.
+/// Blocks without a registered renderer are skipped and take up no space.
 ///
 /// Example:
 /// ```dart
@@ -28,18 +30,26 @@ class EditorJSView extends StatelessWidget {
     final source = JsonDocumentSource(registry: config.typeRegistry);
     final document = ParseDocument(source)(jsonData);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final block in document.blocks) ...[
-          config.rendererRegistry.buildRenderer(
-                block,
-                config.styleConfig,
-              ) ??
-              const SizedBox.shrink(),
-          const SizedBox(height: 8),
-        ],
-      ],
+    final rendered = [
+      for (final block in document.blocks)
+        config.rendererRegistry.buildRenderer(block, config.styleConfig),
+    ].nonNulls;
+
+    return EditorConfigScope(
+      config: config,
+      child: EditorLinkScope(
+        onLinkTap: config.onLinkTap,
+        allowedSchemes: config.allowedLinkSchemes,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final widget in rendered) ...[
+              widget,
+              const SizedBox(height: 8),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

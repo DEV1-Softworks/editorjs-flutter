@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../config/editor_config.dart';
 import '../controller/editor_controller.dart';
+import 'editor_config_scope.dart';
 import 'editorjs_toolbar.dart';
 
 /// Interactive editor for EditorJS content.
@@ -62,42 +63,46 @@ class _EditorJSEditorState extends State<EditorJSEditor> {
 
     final ids = widget.controller.blockIds;
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: blocks.length,
-            itemBuilder: (context, index) {
-              final block = blocks[index];
-              final editor = widget.config.rendererRegistry.buildEditor(
-                    block,
-                    (updated) => widget.controller.updateBlock(index, updated),
-                  ) ??
-                  _UnknownBlockWidget(type: block.type);
+    return EditorConfigScope(
+      config: widget.config,
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: blocks.length,
+              itemBuilder: (context, index) {
+                final block = blocks[index];
+                final editor = widget.config.rendererRegistry.buildEditor(
+                      block,
+                      (updated) => widget.controller.updateBlock(index, updated),
+                    ) ??
+                    _UnknownBlockWidget(type: block.type);
 
-              return Padding(
-                key: ValueKey(ids[index]),
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _BlockWrap(
-                  onMoveUp: index > 0
-                      ? () => widget.controller.moveBlock(index, index - 1)
-                      : null,
-                  onMoveDown: index < blocks.length - 1
-                      ? () => widget.controller.moveBlock(index, index + 1)
-                      : null,
-                  onDelete: () => widget.controller.removeBlock(index),
-                  child: editor,
-                ),
-              );
-            },
+                return Padding(
+                  key: ValueKey(ids[index]),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _BlockWrap(
+                    onMoveUp: index > 0
+                        ? () => widget.controller.moveBlock(index, index - 1)
+                        : null,
+                    onMoveDown: index < blocks.length - 1
+                        ? () => widget.controller.moveBlock(index, index + 1)
+                        : null,
+                    onDelete: () => widget.controller.removeBlock(index),
+                    child: editor,
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-        EditorJSToolbar(
-          controller: widget.controller,
-          rendererRegistry: widget.config.rendererRegistry,
-        ),
-      ],
+          EditorJSToolbar(
+            controller: widget.controller,
+            rendererRegistry: widget.config.rendererRegistry,
+            items: widget.config.toolbarItems,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -117,6 +122,7 @@ class _BlockWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = EditorConfigScope.stringsOf(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -126,17 +132,17 @@ class _BlockWrap extends StatelessWidget {
           children: [
             _BlockControlButton(
               icon: Icons.arrow_upward,
-              tooltip: 'Move up',
+              tooltip: strings.moveUp,
               onTap: onMoveUp,
             ),
             _BlockControlButton(
               icon: Icons.arrow_downward,
-              tooltip: 'Move down',
+              tooltip: strings.moveDown,
               onTap: onMoveDown,
             ),
             _BlockControlButton(
               icon: Icons.close,
-              tooltip: 'Delete block',
+              tooltip: strings.deleteBlock,
               onTap: onDelete,
               color: Colors.red.shade300,
             ),
@@ -193,7 +199,7 @@ class _UnknownBlockWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Text(
-        '[Unsupported block: $type]',
+        EditorConfigScope.stringsOf(context).unsupportedBlock(type),
         style: TextStyle(
           color: Colors.grey.shade500,
           fontStyle: FontStyle.italic,

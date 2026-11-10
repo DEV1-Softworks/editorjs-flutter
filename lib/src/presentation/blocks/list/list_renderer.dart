@@ -1,59 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 
-import '../../../data/utils/html_sanitizer.dart';
 import '../../../domain/entities/blocks/list_block.dart';
-import '../../../domain/entities/style_config.dart';
-import '../../utils/html_style_builder.dart';
+import '../../utils/list_counter_formatter.dart';
+import '../../widgets/inline_html.dart';
 import '../base_block_renderer.dart';
 
 class ListRenderer extends BlockRenderer<ListBlock> {
   const ListRenderer({super.key, required super.block, super.styleConfig});
 
+  static const double _indentPerLevel = 16;
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: _buildItems(block.items, block.style, 0, styleConfig),
+      children: _buildItems(context, block.items, const []),
     );
   }
 
-  static List<Widget> _buildItems(
+  /// Builds the rows for [items] and, recursively, their children.
+  ///
+  /// [parentPath] holds the counter values of the ancestors, outermost first,
+  /// so an ordered list can number nested items `1.1.`, `1.2.`, …
+  List<Widget> _buildItems(
+    BuildContext context,
     List<ListItem> items,
-    ListStyle style,
-    int depth,
-    StyleConfig? styleConfig,
+    List<int> parentPath,
   ) {
-    final indentLeft = depth * 16.0;
-    int counter = 1;
+    // Only the top level honours `start`; nested levels count from 1.
+    var counter = parentPath.isEmpty ? (block.start ?? 1) : 1;
 
-    return [
-      for (final item in items) ...[
-        Row(
+    final rows = <Widget>[];
+    for (final item in items) {
+      final path = [...parentPath, counter++];
+      rows.add(Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(width: indentLeft),
-            Padding(
-              padding: const EdgeInsets.only(top: 2, right: 6),
-              child: Text(
-                style == ListStyle.ordered ? '${counter++}.' : '\u2022',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontFamily: styleConfig?.defaultFont,
-                ),
-              ),
-            ),
+            SizedBox(width: parentPath.length * _indentPerLevel),
+            _buildMarker(context, item, path),
             Expanded(
-              child: Html(
-                data: HtmlSanitizer.sanitize(item.content),
-                style: HtmlStyleBuilder.build(styleConfig),
+              child: InlineHtml(
+                item.content,
+                styleConfig: styleConfig,
+                bodyStyle: _contentStyle(item),
               ),
             ),
           ],
         ),
-        if (item.items.isNotEmpty)
-          ..._buildItems(item.items, style, depth + 1, styleConfig),
-      ],
-    ];
+      ));
+      rows.addAll(_buildItems(context, item.items, path));
+    }
+    return rows;
+  }
+
+  Widget _buildMarker(BuildContext context, ListItem item, List<int> path) {
+    if (block.style == ListStyle.checklist) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 1, right: 8),
+        child: Icon(
+          item.checked
+              ? Icons.check_box_outlined
+              : Icons.check_box_outline_blank,
+          size: 18,
+          color: item.checked
+              ? Theme.of(context).colorScheme.primary
+              : Colors.grey,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Text(
+        block.style == ListStyle.ordered
+            ? ListCounterFormatter.marker(path, block.counterType)
+            : '•',
+        style: TextStyle(
+          fontSize: 14,
+          fontFamily: styleConfig?.defaultFont,
+        ),
+      ),
+    );
+  }
+
+  /// Ticked checklist items are struck through, like the checklist block.
+  Style? _contentStyle(ListItem item) {
+    if (block.style != ListStyle.checklist || !item.checked) return null;
+    return Style(
+      textDecoration: TextDecoration.lineThrough,
+      color: Colors.grey,
+    );
   }
 }

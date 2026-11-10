@@ -6,10 +6,12 @@ A viewer and editor compatible with the [EditorJS](https://editorjs.io/) JSON sc
 [![CI](https://github.com/DEV1-Softworks/editorjs-flutter/actions/workflows/ci.yml/badge.svg)](https://github.com/DEV1-Softworks/editorjs-flutter/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/DEV1-Softworks/editorjs-flutter/branch/master/graph/badge.svg)](https://codecov.io/gh/DEV1-Softworks/editorjs-flutter)
 
-# DISCLAIMER
-This package is in active development (pre-1.0). The public API is stable and the Clean Architecture foundation is solid, but some editor features are still being refined. Suitable for early production use with the understanding that minor API changes may occur in future minor versions.
+# Status
+Version 1.0 is the first stable release. It reads and writes the JSON of EditorJS 2.31, including the `@editorjs/list` 2.x format, and saving a document keeps everything that was loaded: block ids, tunes, and blocks from plugins this package does not know.
 
-Requires **Flutter 3.10+** and **Dart 3.0+**.
+From 1.0 on the package follows [semantic versioning](https://dart.dev/tools/pub/versioning): the public API changes incompatibly only in a new major version.
+
+Requires **Flutter 3.27+** (Dart 3.6+).
 
 # Installation
 
@@ -17,10 +19,12 @@ Add the following to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  editorjs_flutter: ^0.5.0-beta.1
+  editorjs_flutter: ^1.0.0
 ```
 
 Then run `flutter pub get`.
+
+The package limits `html` to versions below 0.15.7, because `flutter_html` 3.0.0 does not compile with 0.15.7. If `pub get` reports a conflict on `html`, another of your dependencies requires the newer version.
 
 # Usage
 
@@ -62,6 +66,32 @@ EditorJSView(
   ),
 )
 ```
+
+### Handling link taps
+
+Web links (`http` and `https`) in the content open in the external application by default; links with any other scheme do nothing. To allow more schemes, list them:
+
+```dart
+EditorJSView(
+  jsonData: myJsonString,
+  config: EditorConfig(
+    allowedLinkSchemes: const {'http', 'https', 'mailto', 'tel'},
+  ),
+)
+```
+
+To handle taps yourself, for example with an in-app browser or your own router, pass `onLinkTap`:
+
+```dart
+EditorJSView(
+  jsonData: myJsonString,
+  config: EditorConfig(
+    onLinkTap: (url) => myRouter.open(url),
+  ),
+)
+```
+
+The callback receives the URL exactly as it appears in the document, so check the scheme before opening it.
 
 ### Full viewer example
 
@@ -138,6 +168,134 @@ class CreateNoteState extends State<CreateNote> {
 }
 ```
 
+### Uploading images
+
+When the user picks an image, the editor needs somewhere to put it. Pass an `imageUploader` that stores the file and returns its public URL:
+
+```dart
+EditorJSEditor(
+  controller: _controller,
+  config: EditorConfig(
+    imageUploader: (image) async {
+      final bytes = await image.readAsBytes();
+      final url = await myApi.upload(image.name, bytes);
+      return UploadedImage(url: url);
+    },
+  ),
+)
+```
+
+`UploadedImage` also takes `extras`, a map saved next to `url` in the block's `file` object (for example `width` and `height`). Throw from the uploader to report a failure; the editor keeps the previous image and shows an error.
+
+Without an uploader the image block stores the path of the file on the device, which no other device can load.
+
+### Choosing the toolbar buttons
+
+`toolbarItems` sets which buttons the toolbar shows, and in what order. For example, to offer only the newer of the two checklist kinds:
+
+```dart
+EditorConfig(
+  toolbarItems: EditorToolbarItem.values
+      .where((item) => item != EditorToolbarItem.legacyChecklist)
+      .toList(),
+)
+```
+
+"Checklist" creates a `list` block with the checklist style (`@editorjs/list` 2.x); "Checklist (legacy)" creates the older `checklist` block. Offer the one your EditorJS setup can read.
+
+### Link previews and attachments
+
+Link and attachment blocks can be filled in by hand: a link block has fields for the title, description and preview image, and an attachment block takes the URL of the file. Two optional hooks automate that:
+
+```dart
+EditorConfig(
+  // Adds a "Fetch preview" button to link blocks.
+  linkPreviewFetcher: (url) async {
+    final page = await myApi.fetchLinkPreview(url);
+    return LinkToolMeta(
+      title: page.title,
+      description: page.description,
+      imageUrl: page.imageUrl,
+    );
+  },
+  // Adds a "Choose file" button to attachment blocks. This package does not
+  // bundle a file picker, so the app picks and uploads the file itself.
+  attachmentPicker: () async {
+    final file = await myFilePicker.pick();
+    if (file == null) return null; // cancelled
+    final url = await myApi.upload(file);
+    return AttachesBlock(url: url, name: file.name, size: file.size);
+  },
+)
+```
+
+Embed blocks need no setup: paste a link from YouTube, Vimeo, X, Instagram, CodePen, Figma or another service the EditorJS embed tool supports, and the embed URL is worked out from it.
+
+### Translating the editor
+
+All the text the editor and the viewer show on their own (button labels, tooltips, field labels, hints, messages) comes from an `EditorStrings` object. English is the default, and Spanish and French ship with the package:
+
+```dart
+EditorConfig(strings: EditorTranslations.es) // or EditorTranslations.fr
+```
+
+To follow the language of the app instead, look the texts up by language code. A language that is not bundled falls back to English:
+
+```dart
+EditorConfig(
+  strings: EditorTranslations.forLanguage(
+    Localizations.localeOf(context).languageCode,
+  ),
+)
+```
+
+The same `EditorConfig` works for `EditorJSView`, which uses a few of these texts too.
+
+#### Rewording a few texts
+
+Pass an `EditorStrings` with only the texts you want to change. Everything you leave out stays in English:
+
+```dart
+EditorConfig(
+  strings: EditorStrings(
+    addItem: 'New entry',
+    removeLastBlock: 'Delete last block',
+  ),
+)
+```
+
+#### Adding a translation in your app
+
+1. Copy [`editor_strings_es.dart`](lib/src/presentation/config/translations/editor_strings_es.dart) into your project as a template. It lists every text, grouped by where it appears.
+2. Rename the constant and translate each text. Texts that include a value, such as a heading level or a file size, are functions, written at the bottom of the file:
+
+   ```dart
+   const EditorStrings editorStringsDe = EditorStrings(
+     paragraph: 'Absatz',
+     heading: _heading,
+     addItem: 'Element hinzufügen',
+     // ... every other text
+   );
+
+   String _heading(int level) => 'Überschrift $level';
+   ```
+
+3. Pass it to the editor, choosing by locale yourself if you support several languages:
+
+   ```dart
+   EditorConfig(strings: editorStringsDe)
+   ```
+
+A text you leave out is shown in English, and so is any text a later version of the package adds, until you translate it.
+
+#### Contributing a translation to the package
+
+1. Copy `editor_strings_es.dart` to `editor_strings_<code>.dart` in [`lib/src/presentation/config/translations/`](lib/src/presentation/config/translations/), using the ISO 639-1 language code, and name the constant `editorStrings<Code>`.
+2. Translate every text in it.
+3. Register it in [`editor_translations.dart`](lib/src/presentation/config/translations/editor_translations.dart): add a `static const` for the language and an entry in `byLanguageCode`.
+4. Run `fvm flutter test test/unit/translations_test.dart`. It fails if the file misses a text, contains one that does not exist, or is not registered.
+5. Add the language to this section and to `CHANGELOG.md`.
+
 ### Pre-loading existing content into the editor
 
 Load a previously saved JSON string directly:
@@ -145,6 +303,8 @@ Load a previously saved JSON string directly:
 ```dart
 _controller = EditorController.fromJson(savedJsonString);
 ```
+
+Loading and saving is lossless: block ids, block tunes, and blocks from EditorJS plugins this package does not know are written back by `getContent()` exactly as they were read. Unknown blocks appear in the editor as an "Unsupported block" placeholder and are skipped by the viewer.
 
 Or pass a parsed block list if you already have one:
 
@@ -191,7 +351,7 @@ AI tools (including Claude Code) are permitted to assist with contributions to t
 
 The following rules apply when using Claude Code (`claude` CLI) on this repository:
 
-1. **Branch before coding.** Claude Code must create and checkout a new branch from `master` before writing any code. Branch names must follow the `feat/`, `fix/`, `refactor/`, or `chore/` prefix convention. Direct commits to `master` are never allowed.
+1. **Branch before coding.** Claude Code must create and checkout a new branch from `develop` before writing any code, one branch per task and never on top of another work branch. Branch names must follow the `feat/`, `fix/`, `refactor/`, or `chore/` prefix convention (`release/<version>` for a release). Direct commits to `master` or `develop` are never allowed. `CLAUDE.md` describes the full workflow.
 2. **Generate a PR description before finishing.** At the end of every coding session, Claude Code must produce a `PR_DESCRIPTION.md` file at the repo root summarising the changes (title, type of change, summary, breaking changes, migration notes, test plan checklist). This file is ephemeral — delete it after the PR is merged.
 3. **No autonomous commits.** Claude Code must never commit or push changes without explicit human instruction. Every commit requires a human to review the diff and approve it first.
 4. **No force pushes.** Claude Code must never run `git push --force` or any destructive git operation (`reset --hard`, `branch -D`, etc.) without explicit human confirmation.
