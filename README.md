@@ -199,6 +199,34 @@ EditorConfig(
 
 "Checklist" creates a `list` block with the checklist style (`@editorjs/list` 2.x); "Checklist (legacy)" creates the older `checklist` block. Offer the one your EditorJS setup can read.
 
+### Link previews and attachments
+
+Link and attachment blocks can be filled in by hand: a link block has fields for the title, description and preview image, and an attachment block takes the URL of the file. Two optional hooks automate that:
+
+```dart
+EditorConfig(
+  // Adds a "Fetch preview" button to link blocks.
+  linkPreviewFetcher: (url) async {
+    final page = await myApi.fetchLinkPreview(url);
+    return LinkToolMeta(
+      title: page.title,
+      description: page.description,
+      imageUrl: page.imageUrl,
+    );
+  },
+  // Adds a "Choose file" button to attachment blocks. This package does not
+  // bundle a file picker, so the app picks and uploads the file itself.
+  attachmentPicker: () async {
+    final file = await myFilePicker.pick();
+    if (file == null) return null; // cancelled
+    final url = await myApi.upload(file);
+    return AttachesBlock(url: url, name: file.name, size: file.size);
+  },
+)
+```
+
+Embed blocks need no setup: paste a link from YouTube, Vimeo, X, Instagram, CodePen, Figma or another service the EditorJS embed tool supports, and the embed URL is worked out from it.
+
 ### Pre-loading existing content into the editor
 
 Load a previously saved JSON string directly:

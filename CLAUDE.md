@@ -119,10 +119,10 @@ final config = EditorConfig(
 | `checklist` | Checked / unchecked | ✅ | Legacy `@editorjs/checklist` block; toolbar button "Checklist (legacy)". The toolbar's "Checklist" button creates a `list` block with the checklist style |
 | `table` | Optional heading row, inline HTML in cells | ✅ | Full width with equal columns, text wraps; scrolls horizontally when columns would be narrower than 96 px. `stretched` is preserved but has no visual effect |
 | `warning` | Title + message, inline HTML | ✅ | |
-| `embed` | Tappable card | Viewer only | |
-| `linkTool` | Link preview card | Viewer only | |
-| `attaches` | File download card | Viewer only | |
-| `raw` | Sanitized HTML | Viewer only | |
+| `embed` | Tappable card | ✅ | Service and embed URL derived from the link with the `@editorjs/embed` patterns (`data/utils/embed_services.dart`) |
+| `linkTool` | Link preview card | ✅ | Preview fields typed by hand or fetched through `EditorConfig.linkPreviewFetcher` |
+| `attaches` | File download card | ✅ | File given as a URL or through `EditorConfig.attachmentPicker` (no bundled file picker) |
+| `raw` | Sanitized HTML | ✅ | Editor shows the HTML source |
 
 ---
 
@@ -132,7 +132,7 @@ final config = EditorConfig(
 
 - **Widgets**: `EditorJSView`, `EditorJSEditor`, `EditorLinkScope` (lets custom renderers open links through `EditorConfig.onLinkTap`)
 - **Controller**: `EditorController`
-- **Config**: `EditorConfig`, `EditorToolbarItem`, `ImageUploader` / `PickedImage` / `UploadedImage`
+- **Config**: `EditorConfig`, `EditorToolbarItem`, `ImageUploader` / `PickedImage` / `UploadedImage`, `LinkPreviewFetcher`, `AttachmentPicker`
 - **Registries**: `BlockTypeRegistry`, `BlockRendererRegistry`
 - **Contracts** (for custom block authors): `BlockMapper`, `BlockRenderer`, `BlockEditor`, `BlockEntity`, `BlockDocument`, `BlockMetadata`, `StyleConfig`
 - **Built-in entities**: `HeaderBlock`, `ParagraphBlock`, `ListBlock`, `DelimiterBlock`, `ImageBlock`, and the other block entities; `UnknownBlock` holds any block the package cannot interpret so it round-trips untouched

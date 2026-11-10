@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../domain/entities/blocks/image_block.dart';
 import '../../config/image_uploader.dart';
-import '../../widgets/image_upload_scope.dart';
+import '../../widgets/editor_config_scope.dart';
 import '../base_block_editor.dart';
 
 class ImageEditor extends BlockEditor<ImageBlock> {
@@ -75,7 +75,7 @@ class _ImageEditorState extends State<ImageEditor> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final uploader = ImageUploadScope.of(context);
+    final uploader = EditorConfigScope.maybeOf(context)?.imageUploader;
     setState(() => _error = null);
 
     final XFile? file;
