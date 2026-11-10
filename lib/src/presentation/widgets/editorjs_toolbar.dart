@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/entities/blocks/attaches_block.dart';
 import '../../domain/entities/blocks/checklist_block.dart';
 import '../../domain/entities/blocks/code_block.dart';
 import '../../domain/entities/blocks/delimiter_block.dart';
+import '../../domain/entities/blocks/embed_block.dart';
 import '../../domain/entities/blocks/header_block.dart';
 import '../../domain/entities/blocks/image_block.dart';
+import '../../domain/entities/blocks/link_tool_block.dart';
 import '../../domain/entities/blocks/list_block.dart';
 import '../../domain/entities/blocks/paragraph_block.dart';
 import '../../domain/entities/blocks/quote_block.dart';
+import '../../domain/entities/blocks/raw_block.dart';
 import '../../domain/entities/blocks/table_block.dart';
 import '../../domain/entities/blocks/warning_block.dart';
 import '../config/editor_toolbar_item.dart';
@@ -149,6 +153,28 @@ class EditorJSToolbar extends StatelessWidget {
           icon: Icons.image_outlined,
           tooltip: 'Image',
           onTap: () => controller.addBlock(const ImageBlock(url: '')),
+        ),
+      EditorToolbarItem.embed => _ToolbarButton(
+          icon: Icons.smart_display_outlined,
+          tooltip: 'Embed',
+          onTap: () => controller.addBlock(
+            const EmbedBlock(service: '', source: '', embed: ''),
+          ),
+        ),
+      EditorToolbarItem.linkPreview => _ToolbarButton(
+          icon: Icons.add_link,
+          tooltip: 'Link preview',
+          onTap: () => controller.addBlock(const LinkToolBlock(link: '')),
+        ),
+      EditorToolbarItem.attachment => _ToolbarButton(
+          icon: Icons.attach_file,
+          tooltip: 'Attachment',
+          onTap: () => controller.addBlock(const AttachesBlock(url: '')),
+        ),
+      EditorToolbarItem.rawHtml => _ToolbarButton(
+          icon: Icons.html,
+          tooltip: 'Raw HTML',
+          onTap: () => controller.addBlock(const RawBlock(html: '')),
         ),
       EditorToolbarItem.hyperlink => _ToolbarButton(
           icon: Icons.link,

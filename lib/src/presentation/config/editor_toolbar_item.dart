@@ -25,6 +25,14 @@ enum EditorToolbarItem {
   delimiter,
   warning,
   image,
+
+  /// Content from a service such as YouTube or Vimeo, given as a link.
+  embed,
+
+  /// A link shown as a preview card (the EditorJS link tool).
+  linkPreview,
+  attachment,
+  rawHtml,
   hyperlink,
   undo,
   redo,

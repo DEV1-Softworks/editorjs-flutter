@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../config/editor_config.dart';
 import '../controller/editor_controller.dart';
+import 'editor_config_scope.dart';
 import 'editorjs_toolbar.dart';
-import 'image_upload_scope.dart';
 
 /// Interactive editor for EditorJS content.
 ///
@@ -63,8 +63,8 @@ class _EditorJSEditorState extends State<EditorJSEditor> {
 
     final ids = widget.controller.blockIds;
 
-    return ImageUploadScope(
-      uploader: widget.config.imageUploader,
+    return EditorConfigScope(
+      config: widget.config,
       child: Column(
         children: [
           Expanded(

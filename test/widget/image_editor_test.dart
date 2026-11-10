@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:editorjs_flutter/editorjs_flutter.dart';
 import 'package:editorjs_flutter/src/presentation/blocks/image/image_editor.dart';
-import 'package:editorjs_flutter/src/presentation/widgets/image_upload_scope.dart';
+import 'package:editorjs_flutter/src/presentation/widgets/editor_config_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,8 +21,8 @@ const _existing = ImageBlock(
 Widget _host(Widget child, {ImageUploader? uploader}) => MaterialApp(
       home: Scaffold(
         body: SingleChildScrollView(
-          child: ImageUploadScope(
-            uploader: uploader,
+          child: EditorConfigScope(
+            config: EditorConfig(imageUploader: uploader),
             child: SizedBox(width: 400, child: child),
           ),
         ),
@@ -344,20 +344,19 @@ void main() {
       expect(const UploadedImage(url: 'u').extras, isEmpty);
     });
 
-    test('ImageUploadScope notifies only when the uploader changes', () {
-      Future<UploadedImage> uploader(PickedImage image) async =>
-          const UploadedImage(url: 'u');
+    test('EditorConfigScope notifies only when the config changes', () {
       const child = SizedBox();
-      final scope = ImageUploadScope(uploader: uploader, child: child);
+      final config = EditorConfig();
+      final scope = EditorConfigScope(config: config, child: child);
       expect(
         scope.updateShouldNotify(
-          ImageUploadScope(uploader: uploader, child: child),
+          EditorConfigScope(config: config, child: child),
         ),
         isFalse,
       );
       expect(
         scope.updateShouldNotify(
-          const ImageUploadScope(uploader: null, child: child),
+          EditorConfigScope(config: EditorConfig(), child: child),
         ),
         isTrue,
       );

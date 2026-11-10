@@ -2,6 +2,7 @@ import '../../data/registry/block_type_registry.dart';
 import '../../domain/entities/style_config.dart';
 import '../registry/block_renderer_registry.dart';
 import '../widgets/editor_link_scope.dart';
+import 'block_editor_hooks.dart';
 import 'editor_toolbar_item.dart';
 import 'image_uploader.dart';
 
@@ -49,6 +50,18 @@ class EditorConfig {
   /// is meant to be read elsewhere.
   final ImageUploader? imageUploader;
 
+  /// Fetches title, description and image for the link of a link block.
+  ///
+  /// When set, the link editor offers a "Fetch preview" button. Without it
+  /// the preview fields are filled in by hand.
+  final LinkPreviewFetcher? linkPreviewFetcher;
+
+  /// Lets the user choose and upload a file for an attachment block.
+  ///
+  /// When set, the attachment editor offers a "Choose file" button. Without
+  /// it an attachment is given as a URL.
+  final AttachmentPicker? attachmentPicker;
+
   EditorConfig({
     BlockTypeRegistry? typeRegistry,
     BlockRendererRegistry? rendererRegistry,
@@ -57,6 +70,8 @@ class EditorConfig {
     this.allowedLinkSchemes = EditorLinkScope.defaultSchemes,
     this.toolbarItems = EditorToolbarItem.values,
     this.imageUploader,
+    this.linkPreviewFetcher,
+    this.attachmentPicker,
   })  : typeRegistry = typeRegistry ?? BlockTypeRegistry(),
         rendererRegistry = rendererRegistry ?? BlockRendererRegistry();
 }

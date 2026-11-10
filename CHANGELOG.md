@@ -25,6 +25,11 @@
 * **Nested lists.** Every list item is editable, at any depth: items can be indented under the one above, outdented, and removed (children move up a level instead of being deleted). Enter adds an item below the current one. Nested items used to be invisible in the editor.
 * **Configurable toolbar.** `EditorConfig.toolbarItems` takes the `EditorToolbarItem` buttons to show, in order; the default is every button.
 * New `ImageBlock.copyWith`.
+* **Editors for embed, link, attachment and raw blocks.** These four were viewer-only and showed an "Unsupported block" placeholder in the editor; each now has an editor and a toolbar button (`EditorToolbarItem.embed`, `linkPreview`, `attachment`, `rawHtml`).
+  * *Embed:* give a link; the service and embed URL are worked out with the patterns of `@editorjs/embed` (YouTube, Vimeo, X/Twitter, Instagram, CodePen, Figma and others).
+  * *Link:* link, title, description and preview image; the new `EditorConfig.linkPreviewFetcher` adds a "Fetch preview" button, the counterpart of the link tool's backend endpoint.
+  * *Attachment:* file URL and title; the new `EditorConfig.attachmentPicker` adds a "Choose file" button for apps that bring their own file picker and upload.
+  * *Raw:* the HTML source.
 
 ### Parser hardening
 * A field of the wrong type no longer throws out of `EditorJSView` / `EditorController.fromJson`. Every built-in mapper now reads through tolerant helpers; previously `linkTool.meta: []`, a non-string list `style`, a non-string paragraph `text` and a non-integer document `time` each raised a `TypeError`.

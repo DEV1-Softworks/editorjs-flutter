@@ -21,6 +21,10 @@ const _tooltips = {
   EditorToolbarItem.delimiter: 'Delimiter',
   EditorToolbarItem.warning: 'Warning',
   EditorToolbarItem.image: 'Image',
+  EditorToolbarItem.embed: 'Embed',
+  EditorToolbarItem.linkPreview: 'Link preview',
+  EditorToolbarItem.attachment: 'Attachment',
+  EditorToolbarItem.rawHtml: 'Raw HTML',
   EditorToolbarItem.hyperlink: 'Hyperlink',
   EditorToolbarItem.undo: 'Undo',
   EditorToolbarItem.redo: 'Redo',
@@ -80,6 +84,10 @@ void main() {
   });
 
   testWidgets('each block button adds the block it names', (tester) async {
+    // Wide enough that every button is on screen and can be tapped.
+    await tester.binding.setSurfaceSize(const Size(2000, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     final expected = <EditorToolbarItem, bool Function(BlockEntity)>{
       EditorToolbarItem.paragraph: (b) => b is ParagraphBlock,
       for (var level = 1; level <= 6; level++)
@@ -98,6 +106,10 @@ void main() {
       EditorToolbarItem.delimiter: (b) => b is DelimiterBlock,
       EditorToolbarItem.warning: (b) => b is WarningBlock,
       EditorToolbarItem.image: (b) => b is ImageBlock,
+      EditorToolbarItem.embed: (b) => b is EmbedBlock,
+      EditorToolbarItem.linkPreview: (b) => b is LinkToolBlock,
+      EditorToolbarItem.attachment: (b) => b is AttachesBlock,
+      EditorToolbarItem.rawHtml: (b) => b is RawBlock,
     };
 
     for (final entry in expected.entries) {
