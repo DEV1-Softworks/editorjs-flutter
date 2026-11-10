@@ -146,6 +146,8 @@ Load a previously saved JSON string directly:
 _controller = EditorController.fromJson(savedJsonString);
 ```
 
+Loading and saving is lossless: block ids, block tunes, and blocks from EditorJS plugins this package does not know are written back by `getContent()` exactly as they were read. Unknown blocks appear in the editor as an "Unsupported block" placeholder and are skipped by the viewer.
+
 Or pass a parsed block list if you already have one:
 
 ```dart

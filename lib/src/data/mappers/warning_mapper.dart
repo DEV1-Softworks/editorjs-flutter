@@ -1,4 +1,5 @@
 import '../../domain/entities/blocks/warning_block.dart';
+import '../utils/json_reader.dart';
 import 'block_mapper.dart';
 
 class WarningMapper implements BlockMapper<WarningBlock> {
@@ -9,7 +10,7 @@ class WarningMapper implements BlockMapper<WarningBlock> {
 
   @override
   WarningBlock fromJson(Map<String, dynamic> data) => WarningBlock(
-        title: (data['title'] as String?) ?? '',
-        message: (data['message'] as String?) ?? '',
+        title: JsonReader.string(data['title']),
+        message: JsonReader.string(data['message']),
       );
 }

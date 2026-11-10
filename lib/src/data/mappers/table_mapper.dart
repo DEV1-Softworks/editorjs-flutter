@@ -1,4 +1,5 @@
 import '../../domain/entities/blocks/table_block.dart';
+import '../utils/json_reader.dart';
 import 'block_mapper.dart';
 
 class TableMapper implements BlockMapper<TableBlock> {
@@ -9,14 +10,13 @@ class TableMapper implements BlockMapper<TableBlock> {
 
   @override
   TableBlock fromJson(Map<String, dynamic> data) {
-    final rawContent =
-        data['content'] is List ? data['content'] as List<dynamic> : <dynamic>[];
     return TableBlock(
-      withHeadings: data['withHeadings'] is bool ? data['withHeadings'] as bool : false,
-      content: rawContent.map((row) {
-        final List<dynamic> rowList = row is List ? row : <dynamic>[];
-        return rowList.map((cell) => cell.toString()).toList();
-      }).toList(),
+      withHeadings: JsonReader.boolean(data['withHeadings']),
+      stretched: JsonReader.boolean(data['stretched']),
+      content: JsonReader.list(data['content'])
+          .map((row) =>
+              JsonReader.list(row).map((cell) => cell.toString()).toList())
+          .toList(),
     );
   }
 }

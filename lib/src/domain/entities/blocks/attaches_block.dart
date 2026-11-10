@@ -10,12 +10,17 @@ class AttachesBlock extends BlockEntity {
 
   final String? title;
 
+  /// Any fields the upload backend stored in the `file` object besides
+  /// `url`, `name`, `extension` and `size`. Preserved on serialize.
+  final Map<String, dynamic> fileExtras;
+
   const AttachesBlock({
     required this.url,
     this.name,
     this.extension,
     this.size,
     this.title,
+    this.fileExtras = const {},
   });
 
   @override
@@ -24,6 +29,7 @@ class AttachesBlock extends BlockEntity {
   @override
   Map<String, dynamic> toJson() => {
         'file': {
+          ...fileExtras,
           'url': url,
           if (name != null) 'name': name,
           if (extension != null) 'extension': extension,

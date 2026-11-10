@@ -216,12 +216,13 @@ void main() {
       expect(ctrl.blockCount, 0);
     });
 
-    test('unknown block types are silently dropped', () {
+    test('unknown block types are kept as UnknownBlock', () {
       const json =
           '{"blocks":[{"type":"unknown_xyz","data":{}},{"type":"header","data":{"text":"Known","level":1}}]}';
       final ctrl = EditorController.fromJson(json);
-      expect(ctrl.blockCount, 1);
-      expect(ctrl.blocks.first, isA<HeaderBlock>());
+      expect(ctrl.blockCount, 2);
+      expect(ctrl.blocks.first, isA<UnknownBlock>());
+      expect(ctrl.blocks.last, isA<HeaderBlock>());
     });
 
     test('multiple blocks parsed correctly', () {

@@ -5,9 +5,20 @@ class LinkToolMeta {
   final String? description;
   final String? imageUrl;
 
-  const LinkToolMeta({this.title, this.description, this.imageUrl});
+  /// Any fields the link-fetching backend returned besides `title`,
+  /// `description` and `image` (for example `site_name`). Preserved on
+  /// serialize.
+  final Map<String, dynamic> extras;
+
+  const LinkToolMeta({
+    this.title,
+    this.description,
+    this.imageUrl,
+    this.extras = const {},
+  });
 
   Map<String, dynamic> toJson() => {
+        ...extras,
         if (title != null) 'title': title,
         if (description != null) 'description': description,
         if (imageUrl != null) 'image': {'url': imageUrl},

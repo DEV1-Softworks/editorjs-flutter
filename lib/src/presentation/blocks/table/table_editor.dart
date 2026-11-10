@@ -45,6 +45,7 @@ class _TableEditorState extends State<TableEditor> {
   void _notify() {
     widget.onChanged(TableBlock(
       withHeadings: _withHeadings,
+      stretched: widget.block.stretched,
       content: _controllers
           .map((row) => row.map((c) => c.text).toList())
           .toList(),

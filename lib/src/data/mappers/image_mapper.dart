@@ -1,21 +1,25 @@
 import '../../domain/entities/blocks/image_block.dart';
+import '../utils/json_reader.dart';
 import 'block_mapper.dart';
 
 class ImageMapper implements BlockMapper<ImageBlock> {
   const ImageMapper();
+
+  static const _knownFileKeys = {'url'};
 
   @override
   String get supportedType => 'image';
 
   @override
   ImageBlock fromJson(Map<String, dynamic> data) {
-    final file = data['file'] is Map ? data['file'] as Map<String, dynamic> : null;
+    final file = JsonReader.map(data['file']);
     return ImageBlock(
-      url: file != null && file['url'] is String ? file['url'] as String : '',
-      caption: data['caption'] is String ? data['caption'] as String : null,
-      withBorder: data['withBorder'] is bool ? data['withBorder'] as bool : false,
-      stretched: data['stretched'] is bool ? data['stretched'] as bool : false,
-      withBackground: data['withBackground'] is bool ? data['withBackground'] as bool : false,
+      url: JsonReader.string(file?['url']),
+      caption: JsonReader.nullableString(data['caption']),
+      withBorder: JsonReader.boolean(data['withBorder']),
+      stretched: JsonReader.boolean(data['stretched']),
+      withBackground: JsonReader.boolean(data['withBackground']),
+      fileExtras: JsonReader.extras(file, _knownFileKeys),
     );
   }
 }

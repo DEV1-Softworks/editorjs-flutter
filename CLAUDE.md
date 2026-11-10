@@ -134,8 +134,8 @@ final config = EditorConfig(
 - **Controller**: `EditorController`
 - **Config**: `EditorConfig`
 - **Registries**: `BlockTypeRegistry`, `BlockRendererRegistry`
-- **Contracts** (for custom block authors): `BlockMapper`, `BlockRenderer`, `BlockEditor`, `BlockEntity`, `BlockDocument`, `StyleConfig`
-- **Built-in entities**: `HeaderBlock`, `ParagraphBlock`, `ListBlock`, `DelimiterBlock`, `ImageBlock`
+- **Contracts** (for custom block authors): `BlockMapper`, `BlockRenderer`, `BlockEditor`, `BlockEntity`, `BlockDocument`, `BlockMetadata`, `StyleConfig`
+- **Built-in entities**: `HeaderBlock`, `ParagraphBlock`, `ListBlock`, `DelimiterBlock`, `ImageBlock`, and the other block entities; `UnknownBlock` holds any block the package cannot interpret so it round-trips untouched
 
 Nothing from `lib/src/` should be imported directly by consumers.
 

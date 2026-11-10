@@ -1,3 +1,27 @@
+## [Unreleased] — towards 1.0.0
+
+### Lossless round-trip with current EditorJS (2.31)
+* **Block ids and tunes are preserved.** `id` and `tunes` are read into the new `BlockDocument.metadata` (`BlockMetadata`) and written back on serialize. `EditorController.blockIds` now holds the EditorJS ids (kept from the document, generated in EditorJS's own 10-character format for new blocks) and the new `EditorController.blockTunes` exposes each block's tunes. Both follow their block through update, move and undo/redo.
+* **Unknown blocks are no longer deleted.** A block with no registered mapper — or whose mapper throws — is kept verbatim as the new `UnknownBlock` entity and written back untouched. The viewer skips it (without leaving a gap) and the editor shows the existing "Unsupported block" placeholder.
+* **Backend-defined fields survive.** `TableBlock.stretched`, `ImageBlock.fileExtras`, `AttachesBlock.fileExtras` and `LinkToolMeta.extras` carry fields such as image `width`/`height` or link `site_name` through a round-trip.
+* **Version stamp updated.** `getContent()` writes `"version": "2.31.7"` (`BlockDocument.editorJsVersion`) instead of the hard-coded `2.19.0`.
+
+### Parser hardening
+* A field of the wrong type no longer throws out of `EditorJSView` / `EditorController.fromJson`. Every built-in mapper now reads through tolerant helpers; previously `linkTool.meta: []`, a non-string list `style`, a non-string paragraph `text` and a non-integer document `time` each raised a `TypeError`.
+* `time` accepts integers, doubles and numeric strings; header `level` accepts doubles.
+
+### Behaviour changes
+* `BlockDocument.blocks`, `EditorController.blocks` and `blockCount` now include `UnknownBlock`s for unrecognised types, where such blocks used to be dropped.
+* `EditorController.blockIds` values are EditorJS-style ids rather than `b0`, `b1`, …
+* `getContent()` output now contains `id` on every block, `tunes` where present, and `stretched` on tables.
+* `BlockRendererRegistry.buildRenderer` / `buildEditor` return `null` for an `UnknownBlock` even when a builder is registered for its type string.
+* Blocks with a missing or non-string `type` are still dropped: they cannot be written back.
+
+### Tests
+* Added `test/unit/lossless_roundtrip_test.dart`, `test/unit/editor_controller_metadata_test.dart`, `test/unit/json_reader_test.dart` and `test/widget/unknown_block_test.dart` (281 tests in total, 88 % line coverage).
+
+---
+
 ## [0.5.0] - 2026-03-25 — Publication readiness
 
 ### New API
