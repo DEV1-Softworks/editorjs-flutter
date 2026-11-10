@@ -36,6 +36,7 @@ class EditorJSView extends StatelessWidget {
 
     return EditorLinkScope(
       onLinkTap: config.onLinkTap,
+      allowedSchemes: config.allowedLinkSchemes,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

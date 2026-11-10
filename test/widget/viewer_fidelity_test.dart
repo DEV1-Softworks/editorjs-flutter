@@ -140,52 +140,87 @@ void main() {
   });
 
   group('layout', () {
-    testWidgets('a table is as wide as its content, not collapsed',
+    testWidgets('a table spans the full width with equal columns',
         (tester) async {
-      await _pumpView(tester, [
-        _block('table', {
-          'content': [
-            ['Kine', 'Pigs'],
-            ['1 pcs', '3 pcs'],
-          ],
-        }),
-      ]);
-      expect(tester.takeException(), isNull);
-
-      final table = tester.getSize(find.byType(Table));
-      expect(table.width, greaterThan(0));
-      expect(table.width, lessThan(_hostWidth));
-      expect(tester.getSize(find.text('Kine')).width, greaterThan(0));
-    });
-
-    testWidgets('a stretched table fills the available width', (tester) async {
-      await _pumpView(tester, [
-        _block('table', {
-          'stretched': true,
-          'content': [
-            ['a', 'b'],
-          ],
-        }),
-      ]);
-      expect(tester.getSize(find.byType(Table)).width, _hostWidth);
-    });
-
-    testWidgets('a table wider than the screen scrolls instead of overflowing',
-        (tester) async {
-      final wide = List.filled(12, 'a fairly long cell of text');
       for (final stretched in [false, true]) {
         await _pumpView(tester, [
           _block('table', {
             'stretched': stretched,
-            'content': [wide],
+            'content': [
+              ['Kine', 'A much longer heading'],
+              ['1 pcs', '3 pcs'],
+            ],
           }),
         ]);
         expect(tester.takeException(), isNull);
-        expect(
-          tester.getSize(find.byType(Table)).width,
-          greaterThan(_hostWidth),
-        );
+        expect(tester.getSize(find.byType(Table)).width, _hostWidth);
+
+        // Equal columns: the second one starts at the halfway point, however
+        // different the content of the two is.
+        final first = tester.getTopLeft(find.text('Kine')).dx;
+        final second = tester.getTopLeft(find.text('A much longer heading')).dx;
+        expect(second - first, _hostWidth / 2);
       }
+    });
+
+    testWidgets('long cell text wraps instead of widening the table',
+        (tester) async {
+      Future<Size> tableSize(String cell) async {
+        await _pumpView(tester, [
+          _block('table', {
+            'content': [
+              [cell, 'b'],
+            ],
+          }),
+        ]);
+        return tester.getSize(find.byType(Table));
+      }
+
+      final short = await tableSize('a');
+      final long = await tableSize(List.filled(30, 'word').join(' '));
+      expect(long.width, _hostWidth);
+      expect(long.height, greaterThan(short.height));
+    });
+
+    testWidgets('a table with too many columns scrolls instead of squeezing',
+        (tester) async {
+      await _pumpView(tester, [
+        _block('table', {
+          'content': [List.filled(12, 'cell')],
+        }),
+      ]);
+      expect(tester.takeException(), isNull);
+      // 12 columns at the 96 px minimum.
+      expect(tester.getSize(find.byType(Table)).width, 12 * 96);
+      expect(
+        find.ancestor(
+          of: find.byType(Table),
+          matching: find.byWidgetPredicate(
+            (w) =>
+                w is SingleChildScrollView &&
+                w.scrollDirection == Axis.horizontal,
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a table with no width to fill sizes columns to content',
+        (tester) async {
+      await tester.pumpWidget(_host(const SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: TableRenderer(
+          block: TableBlock(
+            content: [
+              ['Kine', 'Pigs'],
+            ],
+          ),
+        ),
+      )));
+      expect(tester.takeException(), isNull);
+      final width = tester.getSize(find.byType(Table)).width;
+      expect(width, greaterThan(0));
+      expect(width, lessThan(_hostWidth));
     });
 
     testWidgets('empty and ragged tables do not throw', (tester) async {
@@ -340,21 +375,19 @@ void main() {
             if (call.method == 'launch') (call.arguments as Map)['url'],
         ];
 
-    test('opens http, https, mailto and tel links', () async {
-      for (final url in [
-        'http://a.example',
-        'https://a.example/path?q=1',
-        'mailto:hi@a.example',
-        'tel:+123456',
-      ]) {
-        expect(await EditorLinkScope.launchExternally(url), isTrue);
-      }
-      expect(launched(), hasLength(4));
-      expect(launched().first, 'http://a.example');
+    test('opens web links by default', () async {
+      expect(await EditorLinkScope.launchExternally('http://a.example'), isTrue);
+      expect(
+        await EditorLinkScope.launchExternally('https://a.example/path?q=1'),
+        isTrue,
+      );
+      expect(launched(), ['http://a.example', 'https://a.example/path?q=1']);
     });
 
-    test('ignores other schemes, relative and malformed URLs', () async {
+    test('ignores every other scheme by default', () async {
       for (final url in [
+        'mailto:hi@a.example',
+        'tel:+123456',
         'javascript:alert(1)',
         'file:///etc/passwd',
         'myapp://item/7',
@@ -365,6 +398,19 @@ void main() {
         expect(await EditorLinkScope.launchExternally(url), isFalse);
       }
       expect(calls, isEmpty);
+    });
+
+    test('opens exactly the schemes that are allowed', () async {
+      const allowed = {'https', 'MAILTO', 'tel'};
+      Future<bool> open(String url) =>
+          EditorLinkScope.launchExternally(url, allowedSchemes: allowed);
+
+      expect(await open('mailto:hi@a.example'), isTrue);
+      expect(await open('tel:+123456'), isTrue);
+      expect(await open('https://a.example'), isTrue);
+      // Not in this set, even though it is allowed by default.
+      expect(await open('http://a.example'), isFalse);
+      expect(launched(), hasLength(3));
     });
 
     test('reports false when the platform cannot open the link', () async {
@@ -402,7 +448,32 @@ void main() {
       expect(launched(), ['https://d.example']);
     });
 
-    testWidgets('a renderer used on its own opens links externally',
+    testWidgets('allowedLinkSchemes widens what a viewer opens',
+        (tester) async {
+      Future<void> pumpAndTap(EditorConfig? config) async {
+        await tester.pumpWidget(_host(EditorJSView(
+          config: config,
+          jsonData: _doc([
+            _block('paragraph', {
+              'text': '<a href="mailto:hi@a.example">Mail</a>',
+            }),
+          ]),
+        )));
+        await tester.pumpAndSettle();
+        await _tapText(tester, 'Mail');
+        await tester.pumpAndSettle();
+      }
+
+      await pumpAndTap(null);
+      expect(launched(), isEmpty);
+
+      await pumpAndTap(EditorConfig(
+        allowedLinkSchemes: const {'http', 'https', 'mailto'},
+      ));
+      expect(launched(), ['mailto:hi@a.example']);
+    });
+
+    testWidgets('a renderer used on its own opens web links externally',
         (tester) async {
       await tester.pumpWidget(_host(
         const InlineHtml('<a href="https://s.example">Solo</a>'),
@@ -429,7 +500,7 @@ void main() {
       expect(calls, isEmpty);
     });
 
-    test('notifies dependants only when the handler changes', () {
+    test('notifies dependants only when its configuration changes', () {
       void handler(String url) {}
       const child = SizedBox();
       final scope = EditorLinkScope(onLinkTap: handler, child: child);
@@ -443,6 +514,14 @@ void main() {
         scope.updateShouldNotify(
           const EditorLinkScope(onLinkTap: null, child: child),
         ),
+        isTrue,
+      );
+      expect(
+        scope.updateShouldNotify(EditorLinkScope(
+          onLinkTap: handler,
+          allowedSchemes: const {'http', 'https', 'tel'},
+          child: child,
+        )),
         isTrue,
       );
     });

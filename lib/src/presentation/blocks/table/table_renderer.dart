@@ -8,6 +8,9 @@ import '../base_block_renderer.dart';
 class TableRenderer extends BlockRenderer<TableBlock> {
   const TableRenderer({super.key, required super.block, super.styleConfig});
 
+  /// Narrowest a column may get before the table scrolls instead of shrinking.
+  static const double _minColumnWidth = 96;
+
   @override
   Widget build(BuildContext context) {
     if (block.content.isEmpty) return const SizedBox.shrink();
@@ -17,13 +20,33 @@ class TableRenderer extends BlockRenderer<TableBlock> {
         );
     if (columnCount == 0) return const SizedBox.shrink();
 
-    final table = Table(
-      // Columns are as wide as their content. The table scrolls sideways, so
-      // its width is unbounded and a flex-only column would collapse to zero.
-      // A stretched table additionally shares out any leftover width.
-      defaultColumnWidth: IntrinsicColumnWidth(
-        flex: block.stretched ? 1 : null,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Without a width to fill (e.g. inside a horizontal scroll view),
+        // fall back to columns as wide as their content.
+        if (!constraints.hasBoundedWidth) {
+          return _buildTable(columnCount, const IntrinsicColumnWidth());
+        }
+
+        // Like EditorJS, a table spans the full width with equal columns and
+        // wraps the text in its cells.
+        final table = _buildTable(columnCount, const FlexColumnWidth());
+        final minWidth = columnCount * _minColumnWidth;
+        if (minWidth <= constraints.maxWidth) return table;
+
+        // Too many columns to stay readable: keep them at the minimum width
+        // and let the table scroll sideways instead.
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(width: minWidth, child: table),
+        );
+      },
+    );
+  }
+
+  Widget _buildTable(int columnCount, TableColumnWidth columnWidth) {
+    return Table(
+      defaultColumnWidth: columnWidth,
       border: TableBorder.all(color: Colors.grey.shade300),
       children: block.content.asMap().entries.map((entry) {
         final rowIndex = entry.key;
@@ -50,21 +73,6 @@ class TableRenderer extends BlockRenderer<TableBlock> {
           }),
         );
       }).toList(),
-    );
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final fillWidth = block.stretched && constraints.hasBoundedWidth;
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: fillWidth
-              ? ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                  child: table,
-                )
-              : table,
-        );
-      },
     );
   }
 }

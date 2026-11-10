@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,7 +13,8 @@ typedef LinkTapCallback = void Function(String url);
 
 /// Tells the block renderers below it what to do when a link is tapped.
 ///
-/// `EditorJSView` inserts one from `EditorConfig.onLinkTap`. Custom renderers
+/// `EditorJSView` inserts one from `EditorConfig.onLinkTap` and
+/// `EditorConfig.allowedLinkSchemes`. Custom renderers
 /// should route their own links through [open] so they follow the same rule
 /// as the built-in blocks:
 ///
@@ -23,15 +25,20 @@ class EditorLinkScope extends InheritedWidget {
   /// Handler for tapped links, or `null` to open them externally.
   final LinkTapCallback? onLinkTap;
 
+  /// URL schemes that may be opened externally when [onLinkTap] is null.
+  final Set<String> allowedSchemes;
+
   const EditorLinkScope({
     super.key,
     required this.onLinkTap,
+    this.allowedSchemes = defaultSchemes,
     required super.child,
   });
 
-  /// Schemes the default behaviour will hand to the operating system.
-  /// Anything else (`javascript:`, `file:`, app-specific schemes) is ignored.
-  static const Set<String> defaultSchemes = {'http', 'https', 'mailto', 'tel'};
+  /// Schemes opened externally unless configured otherwise: web links only.
+  /// Anything else (`mailto:`, `tel:`, `javascript:`, `file:`, app-specific
+  /// schemes) is ignored until it is added to the allowed schemes.
+  static const Set<String> defaultSchemes = {'http', 'https'};
 
   /// Opens [url] using the nearest scope's handler.
   ///
@@ -41,21 +48,28 @@ class EditorLinkScope extends InheritedWidget {
   static void open(BuildContext context, String? url) {
     if (url == null || url.trim().isEmpty) return;
 
-    final handler = context
-        .getInheritedWidgetOfExactType<EditorLinkScope>()
-        ?.onLinkTap;
+    final scope = context.getInheritedWidgetOfExactType<EditorLinkScope>();
+    final handler = scope?.onLinkTap;
     if (handler != null) {
       handler(url);
     } else {
-      unawaited(launchExternally(url));
+      unawaited(launchExternally(
+        url,
+        allowedSchemes: scope?.allowedSchemes ?? defaultSchemes,
+      ));
     }
   }
 
   /// Opens [url] in the external application if its scheme is one of
-  /// [defaultSchemes]. Returns whether the link was opened.
-  static Future<bool> launchExternally(String url) async {
+  /// [allowedSchemes] (compared case-insensitively). Returns whether the link
+  /// was opened.
+  static Future<bool> launchExternally(
+    String url, {
+    Set<String> allowedSchemes = defaultSchemes,
+  }) async {
     final uri = Uri.tryParse(url.trim());
-    if (uri == null || !defaultSchemes.contains(uri.scheme.toLowerCase())) {
+    if (uri == null ||
+        !allowedSchemes.any((s) => s.toLowerCase() == uri.scheme)) {
       return false;
     }
     try {
@@ -70,5 +84,6 @@ class EditorLinkScope extends InheritedWidget {
 
   @override
   bool updateShouldNotify(EditorLinkScope oldWidget) =>
-      onLinkTap != oldWidget.onLinkTap;
+      onLinkTap != oldWidget.onLinkTap ||
+      !setEquals(allowedSchemes, oldWidget.allowedSchemes);
 }

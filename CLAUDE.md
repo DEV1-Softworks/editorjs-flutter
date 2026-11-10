@@ -117,7 +117,7 @@ final config = EditorConfig(
 | `quote` | With alignment | ✅ | |
 | `code` | Monospace + copy button | ✅ | |
 | `checklist` | Checked / unchecked | ✅ | Legacy `@editorjs/checklist` block; toolbar button "Checklist (legacy)". The toolbar's "Checklist" button creates a `list` block with the checklist style |
-| `table` | Optional heading row, `stretched`, inline HTML in cells | ✅ | Columns sized to content; scrolls horizontally |
+| `table` | Optional heading row, inline HTML in cells | ✅ | Full width with equal columns, text wraps; scrolls horizontally when columns would be narrower than 96 px. `stretched` is preserved but has no visual effect |
 | `warning` | Title + message, inline HTML | ✅ | |
 | `embed` | Tappable card | Viewer only | |
 | `linkTool` | Link preview card | Viewer only | |
