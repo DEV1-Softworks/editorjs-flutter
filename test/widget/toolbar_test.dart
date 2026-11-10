@@ -117,15 +117,32 @@ void main() {
       expect((controller.blocks.first as ListBlock).style, ListStyle.ordered);
     });
 
-    testWidgets('tapping checklist button adds checklist block', (tester) async {
+    testWidgets('tapping checklist button adds a list 2.x checklist',
+        (tester) async {
       final controller = EditorController();
       await tester.pumpWidget(_wrapToolbar(controller));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.checklist));
+      await tester.tap(find.byTooltip('Checklist'));
+      await tester.pumpAndSettle();
+      expect(controller.blockCount, 1);
+      final block = controller.blocks.first as ListBlock;
+      expect(block.style, ListStyle.checklist);
+      expect(block.items.single.checked, isFalse);
+      expect(controller.getContent(), contains('"style":"checklist"'));
+    });
+
+    testWidgets('tapping legacy checklist button adds a checklist block',
+        (tester) async {
+      final controller = EditorController();
+      await tester.pumpWidget(_wrapToolbar(controller));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Checklist (legacy)'));
       await tester.pumpAndSettle();
       expect(controller.blockCount, 1);
       expect(controller.blocks.first, isA<ChecklistBlock>());
+      expect(controller.getContent(), contains('"type":"checklist"'));
     });
 
     testWidgets('tapping table button adds table block', (tester) async {
@@ -221,6 +238,13 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
+      // The toolbar scrolls horizontally and the link button sits past the
+      // edge of the default test viewport.
+      await tester.scrollUntilVisible(
+        find.byIcon(Icons.link),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.byIcon(Icons.link));
       await tester.pumpAndSettle();
 
@@ -245,6 +269,13 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
+      // The toolbar scrolls horizontally and the link button sits past the
+      // edge of the default test viewport.
+      await tester.scrollUntilVisible(
+        find.byIcon(Icons.link),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.byIcon(Icons.link));
       await tester.pumpAndSettle();
 

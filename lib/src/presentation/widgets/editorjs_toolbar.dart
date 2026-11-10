@@ -84,9 +84,23 @@ class EditorJSToolbar extends StatelessWidget {
                   ),
                 ),
               ),
+              // Two checklists on purpose: which one a document can use depends
+              // on the tools installed in the EditorJS instance that reads it.
+              // `@editorjs/list` 2.x stores a checklist as a list block …
               _ToolbarButton(
                 icon: Icons.checklist,
                 tooltip: 'Checklist',
+                onTap: () => controller.addBlock(
+                  const ListBlock(
+                    style: ListStyle.checklist,
+                    items: [ListItem(content: '')],
+                  ),
+                ),
+              ),
+              // … while the older `@editorjs/checklist` tool has its own block.
+              _ToolbarButton(
+                icon: Icons.check_box_outlined,
+                tooltip: 'Checklist (legacy)',
                 onTap: () => controller.addBlock(
                   const ChecklistBlock(
                     items: [ChecklistItem(text: '')],

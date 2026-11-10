@@ -116,7 +116,7 @@ final config = EditorConfig(
 | `image` | Network URL | ✅ | caption/border/stretch parsed; image_picker not wired |
 | `quote` | With alignment | ✅ | |
 | `code` | Monospace + copy button | ✅ | |
-| `checklist` | Checked / unchecked | ✅ | |
+| `checklist` | Checked / unchecked | ✅ | Legacy `@editorjs/checklist` block; toolbar button "Checklist (legacy)". The toolbar's "Checklist" button creates a `list` block with the checklist style |
 | `table` | With optional heading row | ✅ | |
 | `warning` | Title + message | ✅ | |
 | `embed` | Tappable card | Viewer only | |
