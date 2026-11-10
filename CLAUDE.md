@@ -110,7 +110,7 @@ final config = EditorConfig(
 | Block | Viewer | Editor | Notes |
 |---|---|---|---|
 | `header` | H1–H6, inline HTML | ✅ | |
-| `paragraph` | HTML via flutter_html | ✅ | Inline format bar (B/I/U/S/code/mark) |
+| `paragraph` | HTML via flutter_html | ✅ | Inline format bar (B/I/U/S/code/mark/link); the link button adds, edits and removes `<a>` |
 | `list` | Ordered (start, counter type) / unordered / checklist / nested | ✅ | `@editorjs/list` 2.x format; legacy list, nested-list and checklist data is read too. Nested items are edited as an outline (indent / outdent) |
 | `delimiter` | Divider | ✅ | |
 | `image` | Network URL, caption, border / stretch / background | ✅ | Editor picks from camera or gallery and uploads through `EditorConfig.imageUploader`; without an uploader the local file path is stored |
@@ -241,7 +241,7 @@ When making changes, always update `CHANGELOG.md` with a new entry at the top fo
 
 - `ImageEditor` imports `dart:io` for the local-file preview; on the web it falls back to `Image.network`, but this path is untested
 - No `EditorController` content persistence to local storage (save/load)
-- No inline link editor in paragraph (currently inserts a `<a>` paragraph block via dialog)
+- The paragraph editor shows the HTML source (tags are visible while editing); the format bar inserts tags rather than styling text in place
 - No drag-to-reorder for blocks (only up/down buttons)
 - Typing history not tracked by undo/redo (only structural operations are undoable)
 - pub.dev publication pending — description, topics, and example are ready but package has not been published yet

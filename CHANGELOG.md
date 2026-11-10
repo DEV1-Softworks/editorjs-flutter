@@ -21,6 +21,7 @@
 
 ### Editor improvements
 * **Image editor.** New `EditorConfig.imageUploader` stores a picked image and returns its public URL (and any extra file fields), like the uploader of the EditorJS image tool; without one the path of the file on the device is stored, as before. The editor gained fields for the image URL and the caption, toggles for border, stretch and background, an upload progress bar, and error messages for failed picks and uploads. Picking a new image no longer resets the caption and the display options.
+* **Links in paragraphs.** The paragraph format bar has a "Link" button: it links the selected text (or inserts the address as a link when nothing is selected), and when the caret is in an existing link it edits or removes that link. A bare address such as `example.com` is completed to `https://example.com`.
 * **Heading level.** The header editor has an H1–H6 selector; the level used to be fixed when the block was created.
 * **Nested lists.** Every list item is editable, at any depth: items can be indented under the one above, outdented, and removed (children move up a level instead of being deleted). Enter adds an item below the current one. Nested items used to be invisible in the editor.
 * **Configurable toolbar.** `EditorConfig.toolbarItems` takes the `EditorToolbarItem` buttons to show, in order; the default is every button.
