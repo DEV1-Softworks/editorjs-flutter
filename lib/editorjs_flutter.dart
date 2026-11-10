@@ -9,6 +9,7 @@ export 'src/presentation/controller/editor_controller.dart';
 // Configuration
 export 'src/presentation/config/editor_config.dart';
 export 'src/presentation/config/editor_toolbar_item.dart';
+export 'src/presentation/config/image_uploader.dart';
 
 // Registries — needed only by callers registering custom block types
 export 'src/data/registry/block_type_registry.dart';

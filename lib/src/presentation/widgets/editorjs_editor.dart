@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../config/editor_config.dart';
 import '../controller/editor_controller.dart';
 import 'editorjs_toolbar.dart';
+import 'image_upload_scope.dart';
 
 /// Interactive editor for EditorJS content.
 ///
@@ -62,43 +63,46 @@ class _EditorJSEditorState extends State<EditorJSEditor> {
 
     final ids = widget.controller.blockIds;
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: blocks.length,
-            itemBuilder: (context, index) {
-              final block = blocks[index];
-              final editor = widget.config.rendererRegistry.buildEditor(
-                    block,
-                    (updated) => widget.controller.updateBlock(index, updated),
-                  ) ??
-                  _UnknownBlockWidget(type: block.type);
+    return ImageUploadScope(
+      uploader: widget.config.imageUploader,
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: blocks.length,
+              itemBuilder: (context, index) {
+                final block = blocks[index];
+                final editor = widget.config.rendererRegistry.buildEditor(
+                      block,
+                      (updated) => widget.controller.updateBlock(index, updated),
+                    ) ??
+                    _UnknownBlockWidget(type: block.type);
 
-              return Padding(
-                key: ValueKey(ids[index]),
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _BlockWrap(
-                  onMoveUp: index > 0
-                      ? () => widget.controller.moveBlock(index, index - 1)
-                      : null,
-                  onMoveDown: index < blocks.length - 1
-                      ? () => widget.controller.moveBlock(index, index + 1)
-                      : null,
-                  onDelete: () => widget.controller.removeBlock(index),
-                  child: editor,
-                ),
-              );
-            },
+                return Padding(
+                  key: ValueKey(ids[index]),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _BlockWrap(
+                    onMoveUp: index > 0
+                        ? () => widget.controller.moveBlock(index, index - 1)
+                        : null,
+                    onMoveDown: index < blocks.length - 1
+                        ? () => widget.controller.moveBlock(index, index + 1)
+                        : null,
+                    onDelete: () => widget.controller.removeBlock(index),
+                    child: editor,
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-        EditorJSToolbar(
-          controller: widget.controller,
-          rendererRegistry: widget.config.rendererRegistry,
-          items: widget.config.toolbarItems,
-        ),
-      ],
+          EditorJSToolbar(
+            controller: widget.controller,
+            rendererRegistry: widget.config.rendererRegistry,
+            items: widget.config.toolbarItems,
+          ),
+        ],
+      ),
     );
   }
 }
