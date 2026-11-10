@@ -96,6 +96,7 @@ class _EditorJSEditorState extends State<EditorJSEditor> {
         EditorJSToolbar(
           controller: widget.controller,
           rendererRegistry: widget.config.rendererRegistry,
+          items: widget.config.toolbarItems,
         ),
       ],
     );

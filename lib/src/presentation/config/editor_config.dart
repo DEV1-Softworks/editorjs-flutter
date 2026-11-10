@@ -2,6 +2,7 @@ import '../../data/registry/block_type_registry.dart';
 import '../../domain/entities/style_config.dart';
 import '../registry/block_renderer_registry.dart';
 import '../widgets/editor_link_scope.dart';
+import 'editor_toolbar_item.dart';
 
 /// Configuration object shared by [EditorJSView] and [EditorJSEditor].
 ///
@@ -28,12 +29,25 @@ class EditorConfig {
   /// links. Links with any other scheme do nothing when tapped.
   final Set<String> allowedLinkSchemes;
 
+  /// The buttons of the editor toolbar, in the order they are shown.
+  ///
+  /// Defaults to every button. Pass a shorter list to hide some, for example
+  /// to offer only the kind of checklist your EditorJS setup can read:
+  ///
+  /// ```dart
+  /// toolbarItems: EditorToolbarItem.values
+  ///     .where((item) => item != EditorToolbarItem.legacyChecklist)
+  ///     .toList(),
+  /// ```
+  final List<EditorToolbarItem> toolbarItems;
+
   EditorConfig({
     BlockTypeRegistry? typeRegistry,
     BlockRendererRegistry? rendererRegistry,
     this.styleConfig,
     this.onLinkTap,
     this.allowedLinkSchemes = EditorLinkScope.defaultSchemes,
+    this.toolbarItems = EditorToolbarItem.values,
   })  : typeRegistry = typeRegistry ?? BlockTypeRegistry(),
         rendererRegistry = rendererRegistry ?? BlockRendererRegistry();
 }
