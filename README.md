@@ -164,6 +164,41 @@ class CreateNoteState extends State<CreateNote> {
 }
 ```
 
+### Uploading images
+
+When the user picks an image, the editor needs somewhere to put it. Pass an `imageUploader` that stores the file and returns its public URL:
+
+```dart
+EditorJSEditor(
+  controller: _controller,
+  config: EditorConfig(
+    imageUploader: (image) async {
+      final bytes = await image.readAsBytes();
+      final url = await myApi.upload(image.name, bytes);
+      return UploadedImage(url: url);
+    },
+  ),
+)
+```
+
+`UploadedImage` also takes `extras`, a map saved next to `url` in the block's `file` object (for example `width` and `height`). Throw from the uploader to report a failure; the editor keeps the previous image and shows an error.
+
+Without an uploader the image block stores the path of the file on the device, which no other device can load.
+
+### Choosing the toolbar buttons
+
+`toolbarItems` sets which buttons the toolbar shows, and in what order. For example, to offer only the newer of the two checklist kinds:
+
+```dart
+EditorConfig(
+  toolbarItems: EditorToolbarItem.values
+      .where((item) => item != EditorToolbarItem.legacyChecklist)
+      .toList(),
+)
+```
+
+"Checklist" creates a `list` block with the checklist style (`@editorjs/list` 2.x); "Checklist (legacy)" creates the older `checklist` block. Offer the one your EditorJS setup can read.
+
 ### Pre-loading existing content into the editor
 
 Load a previously saved JSON string directly:

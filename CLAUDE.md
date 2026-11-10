@@ -111,9 +111,9 @@ final config = EditorConfig(
 |---|---|---|---|
 | `header` | H1–H6, inline HTML | ✅ | |
 | `paragraph` | HTML via flutter_html | ✅ | Inline format bar (B/I/U/S/code/mark) |
-| `list` | Ordered (start, counter type) / unordered / checklist / nested | ✅ | `@editorjs/list` 2.x format; legacy list, nested-list and checklist data is read too. Nested items are rendered but not yet editable |
+| `list` | Ordered (start, counter type) / unordered / checklist / nested | ✅ | `@editorjs/list` 2.x format; legacy list, nested-list and checklist data is read too. Nested items are edited as an outline (indent / outdent) |
 | `delimiter` | Divider | ✅ | |
-| `image` | Network URL | ✅ | caption/border/stretch parsed; image_picker not wired |
+| `image` | Network URL, caption, border / stretch / background | ✅ | Editor picks from camera or gallery and uploads through `EditorConfig.imageUploader`; without an uploader the local file path is stored |
 | `quote` | With alignment | ✅ | |
 | `code` | Monospace + copy button | ✅ | |
 | `checklist` | Checked / unchecked | ✅ | Legacy `@editorjs/checklist` block; toolbar button "Checklist (legacy)". The toolbar's "Checklist" button creates a `list` block with the checklist style |
@@ -132,7 +132,7 @@ final config = EditorConfig(
 
 - **Widgets**: `EditorJSView`, `EditorJSEditor`, `EditorLinkScope` (lets custom renderers open links through `EditorConfig.onLinkTap`)
 - **Controller**: `EditorController`
-- **Config**: `EditorConfig`
+- **Config**: `EditorConfig`, `EditorToolbarItem`, `ImageUploader` / `PickedImage` / `UploadedImage`
 - **Registries**: `BlockTypeRegistry`, `BlockRendererRegistry`
 - **Contracts** (for custom block authors): `BlockMapper`, `BlockRenderer`, `BlockEditor`, `BlockEntity`, `BlockDocument`, `BlockMetadata`, `StyleConfig`
 - **Built-in entities**: `HeaderBlock`, `ParagraphBlock`, `ListBlock`, `DelimiterBlock`, `ImageBlock`, and the other block entities; `UnknownBlock` holds any block the package cannot interpret so it round-trips untouched
@@ -239,7 +239,7 @@ When making changes, always update `CHANGELOG.md` with a new entry at the top fo
 
 ## Known Issues / Backlog
 
-- `image_picker` is declared as a dependency but `ImageEditor` only accepts a URL string — picker not wired up
+- `ImageEditor` imports `dart:io` for the local-file preview; on the web it falls back to `Image.network`, but this path is untested
 - No `EditorController` content persistence to local storage (save/load)
 - No inline link editor in paragraph (currently inserts a `<a>` paragraph block via dialog)
 - No drag-to-reorder for blocks (only up/down buttons)
