@@ -20,6 +20,24 @@ class ImageBlock extends BlockEntity {
     this.fileExtras = const {},
   });
 
+  /// Returns a copy with the given fields replaced.
+  ImageBlock copyWith({
+    String? url,
+    String? caption,
+    bool? withBorder,
+    bool? stretched,
+    bool? withBackground,
+    Map<String, dynamic>? fileExtras,
+  }) =>
+      ImageBlock(
+        url: url ?? this.url,
+        caption: caption ?? this.caption,
+        withBorder: withBorder ?? this.withBorder,
+        stretched: stretched ?? this.stretched,
+        withBackground: withBackground ?? this.withBackground,
+        fileExtras: fileExtras ?? this.fileExtras,
+      );
+
   @override
   String get type => 'image';
 

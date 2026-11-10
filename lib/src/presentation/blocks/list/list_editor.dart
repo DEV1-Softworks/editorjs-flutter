@@ -12,6 +12,27 @@ class ListEditor extends BlockEditor<ListBlock> {
   State<ListEditor> createState() => _ListEditorState();
 }
 
+/// One editable line of the list.
+///
+/// The nested [ListItem] tree is edited as a flat outline: every item is a
+/// row with a depth, and a row's children are the deeper rows that follow it.
+/// Indenting and outdenting then only change depths, and the tree is rebuilt
+/// from the rows whenever the block is reported upward.
+class _Row {
+  _Row({required String text, required this.depth, required this.checked})
+      : controller = TextEditingController(text: text);
+
+  final TextEditingController controller;
+  final FocusNode focusNode = FocusNode();
+  int depth;
+  bool checked;
+
+  void dispose() {
+    controller.dispose();
+    focusNode.dispose();
+  }
+}
+
 class _ListEditorState extends State<ListEditor> {
   /// Order of the buttons in the style selector.
   static const _styles = [
@@ -28,8 +49,9 @@ class _ListEditorState extends State<ListEditor> {
     ListCounterType.upperAlpha: 'Upper Alpha',
   };
 
-  late List<TextEditingController> _controllers;
-  late List<ListItem> _items;
+  static const double _indentPerLevel = 16;
+
+  late List<_Row> _rows;
   late ListStyle _style;
   late int? _start;
   late ListCounterType? _counterType;
@@ -38,9 +60,7 @@ class _ListEditorState extends State<ListEditor> {
   @override
   void initState() {
     super.initState();
-    _items = List.from(widget.block.items);
-    _controllers =
-        _items.map((i) => TextEditingController(text: i.content)).toList();
+    _rows = _flatten(widget.block.items);
     _style = widget.block.style;
     _start = widget.block.start;
     _counterType = widget.block.counterType;
@@ -49,8 +69,8 @@ class _ListEditorState extends State<ListEditor> {
 
   @override
   void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
+    for (final row in _rows) {
+      row.dispose();
     }
     _startController.dispose();
     super.dispose();
@@ -60,28 +80,8 @@ class _ListEditorState extends State<ListEditor> {
   void didUpdateWidget(covariant ListEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.block != widget.block) {
-      final newItems = widget.block.items;
       setState(() {
-        final updated = <TextEditingController>[];
-        for (var i = 0; i < newItems.length; i++) {
-          if (i < _controllers.length) {
-            // Only update text when the content actually differs to avoid
-            // resetting the cursor during normal typing round-trips.
-            if (_controllers[i].text != newItems[i].content) {
-              _controllers[i].text = newItems[i].content;
-            }
-            updated.add(_controllers[i]);
-          } else {
-            updated.add(TextEditingController(text: newItems[i].content));
-          }
-        }
-        // Dispose extra controllers only after building the updated list so
-        // that an unexpected error cannot leave _controllers in a partial state.
-        for (var i = newItems.length; i < _controllers.length; i++) {
-          _controllers[i].dispose();
-        }
-        _controllers = updated;
-        _items = List.from(newItems);
+        _syncRows(widget.block.items);
         _style = widget.block.style;
         _counterType = widget.block.counterType;
         // Same rule as the item fields: leave the text alone while it already
@@ -94,10 +94,106 @@ class _ListEditorState extends State<ListEditor> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Tree <-> rows
+  // ---------------------------------------------------------------------------
+
+  /// The items of a tree in display order, each with its nesting depth.
+  static List<(ListItem, int)> _outline(List<ListItem> items) {
+    final outline = <(ListItem, int)>[];
+    void visit(List<ListItem> level, int depth) {
+      for (final item in level) {
+        outline.add((item, depth));
+        visit(item.items, depth + 1);
+      }
+    }
+
+    visit(items, 0);
+    return outline;
+  }
+
+  static List<_Row> _flatten(List<ListItem> items) => [
+        for (final (item, depth) in _outline(items))
+          _Row(text: item.content, depth: depth, checked: item.checked),
+      ];
+
+  /// Brings the rows in line with [items], reusing the existing rows so that
+  /// text fields keep their cursor and focus across the parent's rebuilds.
+  void _syncRows(List<ListItem> items) {
+    final outline = _outline(items);
+    final synced = <_Row>[];
+    for (var i = 0; i < outline.length; i++) {
+      final (item, depth) = outline[i];
+      if (i < _rows.length) {
+        final row = _rows[i];
+        // Only update text when the content actually differs to avoid
+        // resetting the cursor during normal typing round-trips.
+        if (row.controller.text != item.content) {
+          row.controller.text = item.content;
+        }
+        row
+          ..depth = depth
+          ..checked = item.checked;
+        synced.add(row);
+      } else {
+        synced.add(
+          _Row(text: item.content, depth: depth, checked: item.checked),
+        );
+      }
+    }
+    // Dispose extra rows only after building the new list so that an
+    // unexpected error cannot leave _rows in a partial state.
+    for (var i = outline.length; i < _rows.length; i++) {
+      _rows[i].dispose();
+    }
+    _rows = synced;
+  }
+
+  List<ListItem> _toTree() {
+    var index = 0;
+    List<ListItem> build(int depth) {
+      final items = <ListItem>[];
+      while (index < _rows.length && _rows[index].depth >= depth) {
+        final row = _rows[index++];
+        items.add(ListItem(
+          content: row.controller.text,
+          checked: row.checked,
+          items: build(depth + 1),
+        ));
+      }
+      return items;
+    }
+
+    return build(0);
+  }
+
+  /// Index just past the last descendant of the row at [index].
+  int _subtreeEnd(int index) {
+    var end = index + 1;
+    while (end < _rows.length && _rows[end].depth > _rows[index].depth) {
+      end++;
+    }
+    return end;
+  }
+
+  /// Restores the outline invariant: the first row is at the top level and no
+  /// row is more than one level deeper than the row before it.
+  void _normalizeDepths() {
+    var previous = -1;
+    for (final row in _rows) {
+      if (row.depth > previous + 1) row.depth = previous + 1;
+      previous = row.depth;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Edits
+  // ---------------------------------------------------------------------------
+
   void _notify() {
     widget.onChanged(ListBlock(
       style: _style,
-      items: List.unmodifiable(_items),
+      items: _toTree(),
       start: _start,
       counterType: _counterType,
     ));
@@ -105,25 +201,54 @@ class _ListEditorState extends State<ListEditor> {
 
   void _addItem() {
     setState(() {
-      _items.add(const ListItem(content: ''));
-      _controllers.add(TextEditingController());
+      _rows.add(_Row(text: '', depth: 0, checked: false));
     });
     _notify();
   }
 
+  /// Adds an empty sibling below the row at [index] (after its children) and
+  /// moves the cursor into it.
+  void _insertAfter(int index) {
+    final row = _Row(text: '', depth: _rows[index].depth, checked: false);
+    setState(() => _rows.insert(_subtreeEnd(index), row));
+    _notify();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _rows.contains(row)) row.focusNode.requestFocus();
+    });
+  }
+
+  /// Removes one row. Its children move up a level rather than disappearing.
   void _removeItem(int index) {
     setState(() {
-      _controllers[index].dispose();
-      _controllers.removeAt(index);
-      _items.removeAt(index);
+      final end = _subtreeEnd(index);
+      for (var i = index + 1; i < end; i++) {
+        _rows[i].depth--;
+      }
+      _rows.removeAt(index).dispose();
+      _normalizeDepths();
+    });
+    _notify();
+  }
+
+  /// A row can become a child of the row above it.
+  bool _canIndent(int index) =>
+      index > 0 && _rows[index].depth <= _rows[index - 1].depth;
+
+  bool _canOutdent(int index) => _rows[index].depth > 0;
+
+  /// Moves a row and its children one level in ([delta] 1) or out (-1).
+  void _shift(int index, int delta) {
+    setState(() {
+      final end = _subtreeEnd(index);
+      for (var i = index; i < end; i++) {
+        _rows[i].depth += delta;
+      }
     });
     _notify();
   }
 
   void _toggleChecked(int index) {
-    setState(() {
-      _items[index] = _items[index].copyWith(checked: !_items[index].checked);
-    });
+    setState(() => _rows[index].checked = !_rows[index].checked);
     _notify();
   }
 
@@ -143,31 +268,52 @@ class _ListEditorState extends State<ListEditor> {
     _notify();
   }
 
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
+    final markers = _style == ListStyle.ordered ? _orderedMarkers() : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSettings(),
-        for (var i = 0; i < _controllers.length; i++)
-          Row(
-            children: [
-              _buildMarker(i),
-              Expanded(
-                child: TextField(
-                  controller: _controllers[i],
-                  onChanged: (v) {
-                    _items[i] = _items[i].copyWith(content: v);
-                    _notify();
-                  },
-                  decoration: const InputDecoration(border: InputBorder.none),
+        for (var i = 0; i < _rows.length; i++)
+          Padding(
+            padding: EdgeInsets.only(left: _rows[i].depth * _indentPerLevel),
+            child: Row(
+              children: [
+                _buildMarker(i, markers?[i]),
+                Expanded(
+                  child: TextField(
+                    controller: _rows[i].controller,
+                    focusNode: _rows[i].focusNode,
+                    onChanged: (_) => _notify(),
+                    // Enter starts the next item, as in any list editor.
+                    textInputAction: TextInputAction.next,
+                    onEditingComplete: () => _insertAfter(i),
+                    decoration: const InputDecoration(border: InputBorder.none),
+                  ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline, size: 18),
-                onPressed: _controllers.length > 1 ? () => _removeItem(i) : null,
-              ),
-            ],
+                _RowButton(
+                  icon: Icons.format_indent_decrease,
+                  tooltip: 'Outdent',
+                  onPressed: _canOutdent(i) ? () => _shift(i, -1) : null,
+                ),
+                _RowButton(
+                  icon: Icons.format_indent_increase,
+                  tooltip: 'Indent',
+                  onPressed: _canIndent(i) ? () => _shift(i, 1) : null,
+                ),
+                _RowButton(
+                  icon: Icons.remove_circle_outline,
+                  tooltip: 'Remove item',
+                  onPressed: _rows.length > 1 ? () => _removeItem(i) : null,
+                ),
+              ],
+            ),
           ),
         TextButton.icon(
           onPressed: _addItem,
@@ -207,7 +353,7 @@ class _ListEditorState extends State<ListEditor> {
           if (_style == ListStyle.ordered) ...[
             const SizedBox(width: 12),
             SizedBox(
-              width: 88,
+              width: 72,
               child: TextField(
                 controller: _startController,
                 onChanged: _setStart,
@@ -237,10 +383,30 @@ class _ListEditorState extends State<ListEditor> {
     );
   }
 
-  Widget _buildMarker(int index) {
+  /// The marker of every row of an ordered list, numbered as the viewer
+  /// numbers them: `start` applies to the top level, children count from 1.
+  List<String> _orderedMarkers() {
+    // Counter of each open level, outermost first, for the row being visited.
+    final counters = <int>[];
+    final markers = <String>[];
+    for (final row in _rows) {
+      if (counters.length > row.depth + 1) {
+        counters.removeRange(row.depth + 1, counters.length);
+      }
+      if (counters.length == row.depth + 1) {
+        counters[row.depth]++;
+      } else {
+        counters.add(row.depth == 0 ? (_start ?? 1) : 1);
+      }
+      markers.add(ListCounterFormatter.marker(counters, _counterType));
+    }
+    return markers;
+  }
+
+  Widget _buildMarker(int index, String? orderedMarker) {
     if (_style == ListStyle.checklist) {
       return Checkbox(
-        value: _items[index].checked,
+        value: _rows[index].checked,
         onChanged: (_) => _toggleChecked(index),
       );
     }
@@ -248,10 +414,37 @@ class _ListEditorState extends State<ListEditor> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: Text(
-        _style == ListStyle.ordered
-            ? ListCounterFormatter.marker([(_start ?? 1) + index], _counterType)
-            : '•',
+        orderedMarker ?? '•',
         style: const TextStyle(fontSize: 14),
+      ),
+    );
+  }
+}
+
+/// Compact per-row action button.
+class _RowButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  const _RowButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Three of these sit in every row, so they are narrower than the default
+    // 48 px icon button to leave room for the item text on a phone.
+    return IconButton(
+      icon: Icon(icon, size: 18),
+      tooltip: tooltip,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(36, 40),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }

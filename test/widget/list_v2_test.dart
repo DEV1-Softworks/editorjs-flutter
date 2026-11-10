@@ -125,14 +125,14 @@ void main() {
         ),
       );
 
-      expect(find.byType(Checkbox), findsNWidgets(2));
+      // One box per item, the nested one included.
+      expect(find.byType(Checkbox), findsNWidgets(3));
       await tester.tap(find.byType(Checkbox).first);
       await tester.pump();
 
       final block = changes.single;
       expect(block.style, ListStyle.checklist);
       expect(block.items.map((i) => i.checked), [true, true]);
-      // Nested items are not editable here, but must not be lost.
       expect(block.items.first.items.single.checked, isTrue);
     });
 

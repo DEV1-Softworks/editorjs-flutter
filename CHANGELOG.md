@@ -19,6 +19,13 @@
 * **Links can be tapped.** `<a>` links did nothing. Web links (`http`, `https`) now open in the external application; other schemes are opt-in through the new `EditorConfig.allowedLinkSchemes` (for example `{'http', 'https', 'mailto', 'tel'}`). To handle taps yourself, pass the new `EditorConfig.onLinkTap`. Link, embed and attachment cards go through the same path. Custom renderers can join in with `EditorLinkScope.open(context, url)`.
 * **Blocks line up.** Paragraph, quote and raw text had an extra 8 px left and right margin that headers and tables did not; list markers sat about 6 px above their item's text. Both are fixed, and list items are spaced 8 px apart.
 
+### Editor improvements
+* **Image editor.** New `EditorConfig.imageUploader` stores a picked image and returns its public URL (and any extra file fields), like the uploader of the EditorJS image tool; without one the path of the file on the device is stored, as before. The editor gained fields for the image URL and the caption, toggles for border, stretch and background, an upload progress bar, and error messages for failed picks and uploads. Picking a new image no longer resets the caption and the display options.
+* **Heading level.** The header editor has an H1–H6 selector; the level used to be fixed when the block was created.
+* **Nested lists.** Every list item is editable, at any depth: items can be indented under the one above, outdented, and removed (children move up a level instead of being deleted). Enter adds an item below the current one. Nested items used to be invisible in the editor.
+* **Configurable toolbar.** `EditorConfig.toolbarItems` takes the `EditorToolbarItem` buttons to show, in order; the default is every button.
+* New `ImageBlock.copyWith`.
+
 ### Parser hardening
 * A field of the wrong type no longer throws out of `EditorJSView` / `EditorController.fromJson`. Every built-in mapper now reads through tolerant helpers; previously `linkTool.meta: []`, a non-string list `style`, a non-string paragraph `text` and a non-integer document `time` each raised a `TypeError`.
 * `time` accepts integers, doubles and numeric strings; header `level` accepts doubles.
@@ -36,7 +43,7 @@
 * Lists are always written in the list 2.x shape: `ListBlock.toJson()` adds a root `meta`, and `ListItem.toJson()` adds a per-item `meta`.
 
 ### Tests
-* Added `test/unit/lossless_roundtrip_test.dart`, `test/unit/editor_controller_metadata_test.dart`, `test/unit/json_reader_test.dart`, `test/unit/list_v2_test.dart`, `test/widget/unknown_block_test.dart`, `test/widget/list_v2_test.dart` and `test/widget/viewer_fidelity_test.dart` (340 tests in total, 92 % line coverage).
+* Added `test/unit/lossless_roundtrip_test.dart`, `test/unit/editor_controller_metadata_test.dart`, `test/unit/json_reader_test.dart`, `test/unit/list_v2_test.dart`, `test/widget/unknown_block_test.dart`, `test/widget/list_v2_test.dart`, `test/widget/viewer_fidelity_test.dart`, `test/widget/header_level_test.dart`, `test/widget/toolbar_items_test.dart`, `test/widget/image_editor_test.dart` and `test/widget/nested_list_editor_test.dart` (388 tests in total, 94 % line coverage).
 
 ---
 
