@@ -36,7 +36,7 @@ fvm flutter test test/editorjs_flutter_test.dart
 
 ## Architecture
 
-The package follows **Clean Architecture** with three strict layers. Dependencies only flow inward (presentation → data → domain). No new external dependencies — only `flutter_html`, `image_picker`, `url_launcher`, and Flutter's built-in `ChangeNotifier`.
+The package follows **Clean Architecture** with three strict layers. Dependencies only flow inward (presentation → data → domain). No new external dependencies — only `flutter_html`, `image_picker`, `url_launcher`, and Flutter's built-in `ChangeNotifier`. (`html` is listed in `pubspec.yaml` only to cap the version `flutter_html` resolves to; the package does not import it.)
 
 ```
 lib/src/
@@ -176,27 +176,33 @@ When building new features, always work bottom-up:
 
 ## Git Workflow
 
-**This repo has branch protection. Direct commits to `master` are not allowed.**
+**This repo follows git flow. Direct commits to `master` or `develop` are not allowed.**
+
+- `master` holds released versions only.
+- `develop` is the integration branch: every feature, fix and chore is merged here first.
+- `release/<version>` is cut from `develop` when a version is ready, and is merged into `master`.
 
 ### Before starting any coding task
 
-1. Ensure `master` is up to date and create a new branch:
+1. Ensure `develop` is up to date and create a new branch from it:
    ```bash
-   git checkout master
+   git checkout develop
    git pull
    git checkout -b <prefix>/<short-description>
    ```
+   Always branch from `develop`, never from another work branch: one branch and one PR per task.
 2. Use these branch name prefixes:
    - `feat/` — new feature or block type
    - `fix/` — bug fix
    - `refactor/` — internal restructuring with no behaviour change
    - `chore/` — dependency bumps, tooling, docs
+   - `release/` — release branch, named after the version (`release/1.0.0`)
 
 ### Before finishing any coding task
 
 1. Run `fvm flutter analyze` — must report **no issues** before marking work done.
 2. Generate a `PR_DESCRIPTION.md` file at the repo root (see template below).
-3. All changes go to `master` via Pull Request only — never push directly.
+3. All changes go to `develop` via Pull Request only — never push directly. Only a release branch is merged into `master`.
 4. Delete `PR_DESCRIPTION.md` after the PR is merged.
 
 ### PR_DESCRIPTION.md template
@@ -227,15 +233,23 @@ When building new features, always work bottom-up:
 - [ ] Demo app tested manually on at least one platform
 ```
 
+### Releasing
+
+1. Cut `release/<version>` from `develop`.
+2. On that branch, set the version in `pubspec.yaml`, turn the `[Unreleased]` section of `CHANGELOG.md` into the entry for the version, and update the version references in `README.md` and in this file. Apart from that, only fixes found while preparing the release go on this branch.
+3. Open a PR from the release branch into `master`. CI must pass.
+4. After the merge, merge `master` back into `develop`.
+
 ---
 
 ## Versioning
 
-Current version: `0.5.0` (in `pubspec.yaml`).
+Current version: `1.0.0` (in `pubspec.yaml`).
 
-When making changes, always update `CHANGELOG.md` with a new entry at the top following the existing format:
-- Bump the patch version for bug fixes
-- Bump the minor version for new features or breaking API changes
+The package follows semantic versioning. When making changes, add a note to the `## [Unreleased]` section at the top of `CHANGELOG.md` (create it if it is missing), following the existing format. Do not change the version on a work branch; it is set on the release branch:
+- Patch version for bug fixes
+- Minor version for new features
+- Major version for breaking changes to the public API
 - Keep `pubspec.yaml` version in sync with `CHANGELOG.md`
 
 ## Known Issues / Backlog
