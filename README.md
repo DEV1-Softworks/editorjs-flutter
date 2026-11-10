@@ -229,21 +229,68 @@ Embed blocks need no setup: paste a link from YouTube, Vimeo, X, Instagram, Code
 
 ### Translating the editor
 
-All the text the editor and the viewer show on their own (button labels, tooltips, field labels, hints, messages) comes from `EditorStrings`, in English by default. Pass your own to translate or reword it; anything you leave out keeps its default:
+All the text the editor and the viewer show on their own (button labels, tooltips, field labels, hints, messages) comes from an `EditorStrings` object. English is the default, and Spanish and French ship with the package:
+
+```dart
+EditorConfig(strings: EditorTranslations.es) // or EditorTranslations.fr
+```
+
+To follow the language of the app instead, look the texts up by language code. A language that is not bundled falls back to English:
 
 ```dart
 EditorConfig(
-  strings: EditorStrings(
-    paragraph: 'Párrafo',
-    addItem: 'Agregar elemento',
-    cancel: 'Cancelar',
-    save: 'Guardar',
-    heading: (level) => 'Encabezado $level',
+  strings: EditorTranslations.forLanguage(
+    Localizations.localeOf(context).languageCode,
   ),
 )
 ```
 
-Texts that include a value, such as a heading level or a file size, are functions. The same `EditorConfig` works for `EditorJSView`, which uses a few of these texts too.
+The same `EditorConfig` works for `EditorJSView`, which uses a few of these texts too.
+
+#### Rewording a few texts
+
+Pass an `EditorStrings` with only the texts you want to change. Everything you leave out stays in English:
+
+```dart
+EditorConfig(
+  strings: EditorStrings(
+    addItem: 'New entry',
+    removeLastBlock: 'Delete last block',
+  ),
+)
+```
+
+#### Adding a translation in your app
+
+1. Copy [`editor_strings_es.dart`](lib/src/presentation/config/translations/editor_strings_es.dart) into your project as a template. It lists every text, grouped by where it appears.
+2. Rename the constant and translate each text. Texts that include a value, such as a heading level or a file size, are functions, written at the bottom of the file:
+
+   ```dart
+   const EditorStrings editorStringsDe = EditorStrings(
+     paragraph: 'Absatz',
+     heading: _heading,
+     addItem: 'Element hinzufügen',
+     // ... every other text
+   );
+
+   String _heading(int level) => 'Überschrift $level';
+   ```
+
+3. Pass it to the editor, choosing by locale yourself if you support several languages:
+
+   ```dart
+   EditorConfig(strings: editorStringsDe)
+   ```
+
+A text you leave out is shown in English, and so is any text a later version of the package adds, until you translate it.
+
+#### Contributing a translation to the package
+
+1. Copy `editor_strings_es.dart` to `editor_strings_<code>.dart` in [`lib/src/presentation/config/translations/`](lib/src/presentation/config/translations/), using the ISO 639-1 language code, and name the constant `editorStrings<Code>`.
+2. Translate every text in it.
+3. Register it in [`editor_translations.dart`](lib/src/presentation/config/translations/editor_translations.dart): add a `static const` for the language and an entry in `byLanguageCode`.
+4. Run `fvm flutter test test/unit/translations_test.dart`. It fails if the file misses a text, contains one that does not exist, or is not registered.
+5. Add the language to this section and to `CHANGELOG.md`.
 
 ### Pre-loading existing content into the editor
 
