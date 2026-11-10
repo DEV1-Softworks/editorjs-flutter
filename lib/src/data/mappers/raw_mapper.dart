@@ -1,4 +1,5 @@
 import '../../domain/entities/blocks/raw_block.dart';
+import '../utils/json_reader.dart';
 import 'block_mapper.dart';
 
 class RawMapper implements BlockMapper<RawBlock> {
@@ -9,5 +10,5 @@ class RawMapper implements BlockMapper<RawBlock> {
 
   @override
   RawBlock fromJson(Map<String, dynamic> data) =>
-      RawBlock(html: (data['html'] as String?) ?? '');
+      RawBlock(html: JsonReader.string(data['html']));
 }

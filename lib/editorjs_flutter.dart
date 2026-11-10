@@ -20,6 +20,7 @@ export 'src/presentation/blocks/base_block_editor.dart';
 // Domain entities — needed for typed access in callbacks and custom blocks
 export 'src/domain/entities/block_entity.dart';
 export 'src/domain/entities/block_document.dart';
+export 'src/domain/entities/block_metadata.dart';
 export 'src/domain/entities/style_config.dart';
 
 // Built-in block entities
@@ -37,3 +38,4 @@ export 'src/domain/entities/blocks/embed_block.dart';
 export 'src/domain/entities/blocks/link_tool_block.dart';
 export 'src/domain/entities/blocks/attaches_block.dart';
 export 'src/domain/entities/blocks/raw_block.dart';
+export 'src/domain/entities/blocks/unknown_block.dart';

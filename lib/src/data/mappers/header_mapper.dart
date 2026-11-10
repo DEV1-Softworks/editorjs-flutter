@@ -1,4 +1,5 @@
 import '../../domain/entities/blocks/header_block.dart';
+import '../utils/json_reader.dart';
 import 'block_mapper.dart';
 
 class HeaderMapper implements BlockMapper<HeaderBlock> {
@@ -9,9 +10,7 @@ class HeaderMapper implements BlockMapper<HeaderBlock> {
 
   @override
   HeaderBlock fromJson(Map<String, dynamic> data) => HeaderBlock(
-        text: data['text'] is String
-            ? data['text'] as String
-            : (data['text']?.toString() ?? ''),
-        level: data['level'] is int ? data['level'] as int : 1,
+        text: JsonReader.string(data['text']),
+        level: JsonReader.integer(data['level']) ?? 1,
       );
 }

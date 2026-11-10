@@ -35,7 +35,7 @@ void main() {
       expect(doc.blocks[1], isA<ParagraphBlock>());
     });
 
-    test('unknown block type is silently dropped, known blocks preserved', () {
+    test('unknown block type is kept verbatim as an UnknownBlock', () {
       const json = '''
       {
         "time": 1610000000000,
@@ -48,9 +48,12 @@ void main() {
       }
       ''';
       final doc = source.parse(json);
-      expect(doc.blocks.length, 2);
+      expect(doc.blocks.length, 3);
       expect(doc.blocks[0], isA<HeaderBlock>());
-      expect(doc.blocks[1], isA<ParagraphBlock>());
+      final unknown = doc.blocks[1] as UnknownBlock;
+      expect(unknown.type, 'unknownCustomType');
+      expect(unknown.data, {'foo': 'bar'});
+      expect(doc.blocks[2], isA<ParagraphBlock>());
     });
 
     test('invalid JSON string returns empty BlockDocument without throwing', () {

@@ -1,4 +1,5 @@
 import '../../domain/entities/blocks/checklist_block.dart';
+import '../utils/json_reader.dart';
 import 'block_mapper.dart';
 
 class ChecklistMapper implements BlockMapper<ChecklistBlock> {
@@ -9,15 +10,14 @@ class ChecklistMapper implements BlockMapper<ChecklistBlock> {
 
   @override
   ChecklistBlock fromJson(Map<String, dynamic> data) {
-    final rawItems =
-        data['items'] is List ? data['items'] as List<dynamic> : <dynamic>[];
     return ChecklistBlock(
-      items: rawItems.whereType<Map<String, dynamic>>().map((i) {
-        return ChecklistItem(
-          text: i['text'] is String ? i['text'] as String : '',
-          checked: i['checked'] is bool ? i['checked'] as bool : false,
-        );
-      }).toList(),
+      items: JsonReader.list(data['items'])
+          .whereType<Map<String, dynamic>>()
+          .map((i) => ChecklistItem(
+                text: JsonReader.string(i['text']),
+                checked: JsonReader.boolean(i['checked']),
+              ))
+          .toList(),
     );
   }
 }

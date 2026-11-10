@@ -1,4 +1,5 @@
 import '../../domain/entities/blocks/quote_block.dart';
+import '../utils/json_reader.dart';
 import 'block_mapper.dart';
 
 class QuoteMapper implements BlockMapper<QuoteBlock> {
@@ -9,10 +10,10 @@ class QuoteMapper implements BlockMapper<QuoteBlock> {
 
   @override
   QuoteBlock fromJson(Map<String, dynamic> data) {
-    final alignStr = (data['alignment'] as String?) ?? 'left';
+    final alignStr = data['alignment'];
     return QuoteBlock(
-      text: (data['text'] as String?) ?? '',
-      caption: data['caption'] as String?,
+      text: JsonReader.string(data['text']),
+      caption: JsonReader.nullableString(data['caption']),
       alignment: QuoteAlignment.values.firstWhere(
         (a) => a.name == alignStr,
         orElse: () => QuoteAlignment.left,
